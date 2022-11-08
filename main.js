@@ -611,7 +611,7 @@ define(["require", "base/js/namespace", "base/js/dialog", "https://cdnjs.cloudfl
 
     const findOrderId = async () => {
         try {
-            console.log('Waiting for the order to be placed and took into processing...');
+            console.log('Waiting for the order to be placed and be taken into processing...');
             let orderId = -1;
             const resCount = await etnyContract._getOrdersCount();
             const count = resCount.toNumber();
