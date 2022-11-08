@@ -613,7 +613,7 @@ define(["require", "base/js/namespace", "base/js/dialog", "https://cdnjs.cloudfl
 
                 await waitUntilDoRequestIdIsValid();
 
-                for (var i = count - 1, _pj_a = count - 5; i > _pj_a; i += -1) {
+                for (let i = count - 1, _pj_a = count - 5; i > _pj_a; i += -1) {
                     // console.log(i);
                     if (__dorequest !== 0) {
                         const order = await etnyContract._getOrder(i);
@@ -747,7 +747,7 @@ define(["require", "base/js/namespace", "base/js/dialog", "https://cdnjs.cloudfl
         const extractPythonCode = () => {
             const source_code = Jupyter.notebook.get_cells().map(function (cell) {
                 if (cell.cell_type == "code") {
-                    var source = cell.code_mirror.getValue();
+                    const source = cell.code_mirror.getValue();
                     if (!source.startsWith("%%javascript")) {
                         return source;
                     }
