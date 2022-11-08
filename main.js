@@ -3,9 +3,9 @@
  * An extension that allows you to execute a task using an existing enclave provided by Ethernity Network
  *
  *
- * @version 0.1.0
+ * @version 0.2.0
  * @author  Ciprian Florea, ciprian@ethernity.cloud
- * @updated 2021-06-08
+ * @updated 2022-11-08
  *
  *
  */
@@ -19,19 +19,14 @@ define(
   ],
   function (requirejs, Jupyter, dialog, ethers, ipfsHttpClient) {
     // console.log(ipfsHttpClient);
-    // const ipfsAddress = "http://ipfs.ethernity.cloud";
-    const ipfsAddress = "https://ipfs.infura.io:5001/api/v0";
-    // const ipfsAddress = "http://127.0.0.1:5001";
-    // const ipfsAddress = "/ip4/127.0.0.1/tcp/5001";
-    const ipfsHost = "ipfs.ethernity.cloud";
-    const ipfsIP = "81.95.5.72";
-    const __imageHash = "QmeQiSC1dLMKv4BvpvjWt1Zeak9zj6TWgWhN7LLiRznJqC:etny-pynithy";
+    const ipfsAddress = "http://ipfs.ethernity.cloud:5001";
+    const __imageHash = "QmSwHhD3puVphVUqFUVGqZA8eMYNBehr4HDtXLvdNbPP4g:etny-pynithy";
     let ipfs = null;
     let __dohash = null;
     let __dorequest = 0;
     let __scriptHash = '';
     let __fileSetHash = '';
-    const smartContractAddress = "0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";//ropsten "0xfb1b8c7bef3fc44496d2ee483e6e11db7ee9ef2b";//bloxberg"0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";  
+    const smartContractAddress = "0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
@@ -1525,6 +1520,7 @@ define(
         type: "function"
       }
     ];
+
     let etnyStakingContract = null;
 
     const getAccountAddress = async () => {
@@ -1584,7 +1580,7 @@ define(
       console.log('Downloading payload from IPFS...');
       let res = "";
       try {
-        for await (const file of ipfs.get(hash)) {
+        for await (const file of ipfs.cat(hash)) {
           res += new TextDecoder().decode(file.buffer);
         }
 
@@ -1616,7 +1612,7 @@ define(
     const createDORequest = async (scriptHash, filesetHash) => {
       console.log(`Submiting transaction for DO request on ${getCurrentTime()}`);
       // add here call to SC(smart contract)
-      const tx = await callContractAddDORequest(scriptHash, filesetHash, "");
+      const tx = await callContractAddDORequest(scriptHash, filesetHash, "0x8306999a94aaA03e96d07bf007b0cB1853DC6703");
       const transactionHash = tx.hash;
       __dohash = transactionHash;
 
@@ -1764,11 +1760,6 @@ define(
       const filesetHash = await uploadToIPFS("ethernithy");
       __fileSetHash = filesetHash;
 
-      // const res = await getFromIPFS(__scriptHash);
-      // console.log(res);
-      // const res1 = await getFromIPFS(__fileSetHash);
-      // console.log(res1);
-
       // create new DO Request
       await createDORequest(scriptHash, filesetHash);
 
@@ -1795,14 +1786,20 @@ define(
     * @returns ObjectURL
     */
     const connectToMetaMaskAndSign = async () => {
-      await provider.send("eth_requestAccounts", []);
-      dialog.modal({
-        title: "MetaMask",
-        body: "MetaMask successfully connected",
-        buttons: { OK: { class: "btn-primary" } },
-        notebook: Jupyter.notebook,
-        keyboard_manager: Jupyter.keyboard_manager,
-      });
+      try {
+        await provider.send("eth_requestAccounts", []);
+
+        return true;
+        // dialog.modal({
+        //   title: "MetaMask",
+        //   body: "MetaMask successfully connected",
+        //   buttons: { OK: { class: "btn-primary" } },
+        //   notebook: Jupyter.notebook,
+        //   keyboard_manager: Jupyter.keyboard_manager,
+        // });
+      } catch (e) {
+        return false;
+      }
     }
 
     const createMetaMaskConnectAction = () => {
@@ -1845,14 +1842,25 @@ define(
     }
 
     const runOnEthernityHandler = async () => {
-      await runOnEthernity();
+      const res = await connectToMetaMaskAndSign();
+      if (res) {
+        await runOnEthernity();
+      } else {
+        dialog.modal({
+          title: "MetaMask",
+          body: "There was an error connecting to your wallet.",
+          buttons: { OK: { class: "btn-primary" } },
+          notebook: Jupyter.notebook,
+          keyboard_manager: Jupyter.keyboard_manager,
+        });
+      }
     }
 
     const createRunOnEthernityAction = () => {
       var action = {
         icon: "fa-play-circle-o", // a font-awesome class used on buttons, etc
-        help: "Run on Ethernity Network",
-        text: "Run on Ethernity Network",
+        help: "Run on Ethernity Cloud",
+        text: "Run on Ethernity Cloud",
         help_index: "zz",
         handler: runOnEthernityHandler,
       };
@@ -1871,8 +1879,8 @@ define(
     const load_ipython_extension = async () => {
       await initialize();
       Jupyter.toolbar.add_buttons_group([
-        createRunOnEthernityAction(),
-        createMetaMaskConnectAction()
+        createRunOnEthernityAction()
+        // createMetaMaskConnectAction()
       ]);
     }
 
