@@ -9,8 +9,8 @@
  *
  *
  */
-define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './utils'],
-    function (requirejs, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, utils) {
+define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './utils'],
+    function (requirejs, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, utils) {
         let nodeAddressMetadata = '';
 
         let __dohash = null;
@@ -194,7 +194,7 @@ define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './et
 
             // get processed result from the order and create a certificate
             const certificateObject = await getResultFromOrder(orderId);
-            const formattedCertificate = generateCertificate(certificateObject);
+            const formattedCertificate = certificate.generateCertificate(certificateObject);
             insertCertificate(formattedCertificate);
 
             await createBloxbergCertificate(certificateObject);
@@ -226,31 +226,6 @@ define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './et
         const insertCertificate = (certificate) => {
             let cell = Jupyter.notebook.insert_cell_at_bottom('code');
             cell.set_text(`${certificate}`);
-        }
-
-        const generateCertificate = (certificate) => {
-            const publicTimestampDate = new Date(certificate.publicTimestamp * 1000);
-            const timestampDate = new Date(certificate.resultTimestamp * 1000);
-            return `
-              ################################################################################################################
-              ######################################### ETHERNITY CLOUD CERTIFICATE ##########################################
-              ################################################################################################################
-              #########                                                                                              #########
-              ######### [INFO]   contract address: ${certificate.contractAddress}                                    #########
-              ######### [INFO]   input transaction: ${certificate.inputTransactionHash}                              #########
-              ######### [INFO]   output transaction: ${certificate.outputTransactionHash}                            #########
-              ######### [INFO]   PoX processing order: ${certificate.orderId}                                        #########              
-              #########                                                                                              #########
-              ######### [INPUT]  public image: ${certificate.imageHash}                                              #########
-              ######### [INPUT]  public script: ${certificate.scriptHash}                                            #########
-              ######### [INPUT]  public fileset: ${certificate.fileSetHash}                                          #########
-              ######### [INPUT]  public timestamp: ${publicTimestampDate} [${certificate.publicTimestamp}]           #########
-              ######### [OUTPUT] public result hash: ${certificate.resultHash}                                       #########
-              ######### [OUTPUT] public result: ${certificate.resultValue}                                           #########
-              ######### [OUTPUT] timestamp: ${timestampDate} [${certificate.resultTimestamp}]                        #########
-              ################################################################################################################
-              ################################################################################################################
-              `;
         }
 
         const createBloxbergCertificate = async (certificate) => {
@@ -295,7 +270,12 @@ define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './et
                                 if ($('#runOnNodeCheckbox').is(':checked')) {
                                     const nodeAddress = $('#nodeAddress').val();
                                     if (etnyContract.isAddress(nodeAddress)) {
-                                        nodeAddressMetadata = nodeAddress;
+                                        const isNode = await etnyContract.isNodeOperator(nodeAddress);
+                                        if (isNode) {
+                                            nodeAddressMetadata = nodeAddress;
+                                        } else {
+                                            alert('Introduced address is not a valid node operator address');
+                                        }
                                     } else {
                                         alert('Introduced address is not a valid wallet address');
                                         return false;

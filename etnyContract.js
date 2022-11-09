@@ -57,6 +57,14 @@ define(function (require, exports, module) {
         return await etnyContract._getResultFromOrder(orderId);
     }
 
+    const isNodeOperator = async (account) => {
+        try {
+            const requests = await etnyContract._getMyDPRequests({from: account});
+            return requests.length > 0;
+        } catch (ex) {
+            return false;
+        }
+    }
     module.exports = {
         getContract,
         contractAddress: etnyContractAddress,
@@ -70,6 +78,7 @@ define(function (require, exports, module) {
         getOrdersCount,
         getOrder,
         approveOrder,
-        getResultFromOrder
+        getResultFromOrder,
+        isNodeOperator
     };
 });
