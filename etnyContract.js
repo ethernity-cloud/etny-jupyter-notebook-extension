@@ -5,7 +5,7 @@ define(function (require, exports, module) {
     const etnyContractAddress = "0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";
     const IMAGE_HASH = "QmSwHhD3puVphVUqFUVGqZA8eMYNBehr4HDtXLvdNbPP4g:etny-pynithy";
 
-    let provider, signer, etnyContract = null;
+    let provider, signer, etnyContract = null, etnyContactWithProvider;
 
     const isAddress = (address) => {
         try {
@@ -20,6 +20,7 @@ define(function (require, exports, module) {
         provider = new ethers.providers.Web3Provider(window.ethereum);
         signer = provider.getSigner();
         etnyContract = new ethers.Contract(etnyContractAddress, abi, signer);
+        etnyContactWithProvider = new ethers.Contract(etnyContractAddress, abi, provider);
     }
 
     const getContract = () => {
@@ -59,9 +60,10 @@ define(function (require, exports, module) {
 
     const isNodeOperator = async (account) => {
         try {
-            const requests = await etnyContract._getMyDPRequests({from: account});
+            const requests = await etnyContactWithProvider._getMyDPRequests({from: account});
             return requests.length > 0;
         } catch (ex) {
+            console.log(ex);
             return false;
         }
     }

@@ -9,8 +9,8 @@
  *
  *
  */
-define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './utils'],
-    function (requirejs, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, utils) {
+define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './utils'],
+    function (requirejs, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, utils) {
         let nodeAddressMetadata = '';
 
         let __dohash = null;
@@ -224,8 +224,9 @@ define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './et
         }
 
         const insertCertificate = (certificate) => {
-            let cell = Jupyter.notebook.insert_cell_at_bottom('code');
-            cell.set_text(`${certificate}`);
+            let cell = Jupyter.notebook.insert_cell_at_bottom('markdown');
+            cell.set_text(`<div id="ethernity_certificate">${certificate}</div>`);
+            cell.render();
         }
 
         const createBloxbergCertificate = async (certificate) => {
@@ -275,6 +276,7 @@ define(["require", "base/js/namespace", "base/js/dialog", './bloxbergAPI', './et
                                             nodeAddressMetadata = nodeAddress;
                                         } else {
                                             alert('Introduced address is not a valid node operator address');
+                                            return false;
                                         }
                                     } else {
                                         alert('Introduced address is not a valid wallet address');

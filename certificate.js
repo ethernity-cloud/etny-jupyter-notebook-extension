@@ -19,12 +19,12 @@ define(function (require, exports, module) {
     const insertCertificateRow = (isEmpty, text) => {
         if (isEmpty) {
             const emptyLength = HASH_LENGTH - START_HASH_LENGTH - END_HASH_LENGTH;
-            return `${generateHash(START_HASH_LENGTH)}${' '.repeat(emptyLength)}${generateHash(END_HASH_LENGTH)}`
+            return `${generateHash(START_HASH_LENGTH)}${`&ensp;`.repeat(emptyLength)}${generateHash(END_HASH_LENGTH)}`
         } else {
             const textLength = text.length;
             let emptyLength = HASH_LENGTH - START_HASH_LENGTH - END_HASH_LENGTH - textLength;
             emptyLength = emptyLength < 0 ? 0 : emptyLength - 1;
-            return `${generateHash(START_HASH_LENGTH)} ${text}${' '.repeat(emptyLength)}${generateHash(END_HASH_LENGTH)}`
+            return `${generateHash(START_HASH_LENGTH)} ${text}${'&ensp;'.repeat(emptyLength)}${generateHash(END_HASH_LENGTH)}`
         }
     }
 
@@ -32,26 +32,46 @@ define(function (require, exports, module) {
         const publicTimestampDate = new Date(certificate.publicTimestamp * 1000);
         const timestampDate = new Date(certificate.resultTimestamp * 1000);
         return `
-              ${generateHash()}
-              ${generateTitle('ETHERNITY CLOUD CERTIFICATE')}
-              ${generateHash()}
-              ${insertCertificateRow(true)}
-              ${insertCertificateRow(false, ` [INFO]   Contract address: ${certificate.contractAddress.trim()}`)}
-              ${insertCertificateRow(false, ` [INFO]   Input transaction: ${certificate.inputTransactionHash.trim()}`)}
-              ${insertCertificateRow(false, ` [INFO]   Output transaction: ${certificate.outputTransactionHash.trim()}`)}
-              ${insertCertificateRow(false, ` [INFO]   PoX processing order: ${certificate.orderId}`)}
-              ${insertCertificateRow(true)}
-              ${insertCertificateRow(false, ` [INPUT]  Public image: ${certificate.imageHash.trim()}`)}
-              ${insertCertificateRow(false, ` [INPUT]  Public script: ${certificate.scriptHash.trim()} `)}
-              ${insertCertificateRow(false, ` [INPUT]  Public fileset: ${certificate.fileSetHash.trim()}`)}
-              ${insertCertificateRow(false, ` [INPUT]  Public timestamp: ${formatDate(publicTimestampDate)} [${certificate.publicTimestamp}]`)}
-              ${insertCertificateRow(true)}
-              ${insertCertificateRow(false, ` [OUTPUT] Public result hash: ${certificate.resultHash.trim()}`)}
-              ${insertCertificateRow(false, ` [OUTPUT] Public result: ${certificate.resultValue.trim()}`)}
-              ${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${formatDate(timestampDate)} [${certificate.resultTimestamp}] `)}
-              ${generateHash()}
-              ${generateHash()}
-              `;
+            <div style="font-family: sans-serif;font-size: 14px;color: #16a34a;">
+              <span>${generateHash()}</span>
+              <br>              
+              <span>${generateTitle('ETHERNITY CLOUD CERTIFICATE')}</span>
+              <br>              
+              <span>${generateHash()}</span>
+              <br>              
+              <span>${insertCertificateRow(true)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO]   Contract address: ${certificate.contractAddress.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO]   Input transaction: ${certificate.inputTransactionHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO]   Output transaction: ${certificate.outputTransactionHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO]   PoX processing order: ${certificate.orderId}`)}</span>
+              <br>
+              <span>${insertCertificateRow(true)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT]  Public image: ${certificate.imageHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT]  Public script: ${certificate.scriptHash.trim()} `)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT]  Public fileset: ${certificate.fileSetHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT]  Public timestamp: ${formatDate(publicTimestampDate)} [${certificate.publicTimestamp}]`)}</span>
+              <br>
+              <span>${insertCertificateRow(true)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Public result hash: ${certificate.resultHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Public result: ${certificate.resultValue.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${formatDate(timestampDate)} [${certificate.resultTimestamp}] `)}</span>
+              <br>
+              <span>${generateHash()}</span>
+              <br>
+              <span>${generateHash()}</span>
+            </div>
+            `;
     }
     module.exports = {
         generateCertificate

@@ -1,5 +1,6 @@
 define(function (require, exports, module) {
-    const BLOXBERG_API_URL = 'https://certify.bloxberg.org'
+    // const BLOXBERG_API_URL = 'https://certify.bloxberg.org'
+    const BLOXBERG_API_URL = 'https://api.ethernity.cloud'
     const BLOXBERG_API_SECRET_KEY = '68530229-8c87-41e1-b6f6-554378e6ba65';
 
     const setupHeaders = () => {
