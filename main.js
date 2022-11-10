@@ -1,7 +1,6 @@
 /**
  * etny.js
- * An extension that allows you to execute a task using an existing enclave provided by Ethernity Network
- *
+ * An extension that allows to execute a task using an existing enclave provided by Ethernity Network
  *
  * @version 0.2.0
  * @author  Ciprian Florea, ciprian@ethernity.cloud
@@ -18,6 +17,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         let __scriptHash = '';
         let __fileSetHash = '';
 
+        const FILESET_DATA = 'ethernity';
+
         const initialize = async () => {
             ipfs.initialize();
             etnyContract.initContract();
@@ -26,7 +27,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         const listenForAddDORequestEvent = async () => {
             await etnyContract.getContract().on("_addDORequestEV", (_from, _rowNumber) => {
-                console.log('emited');
+                console.log('emitted');
                 __dorequest = _rowNumber.toNumber();
                 console.log(__dorequest);
             });
@@ -40,12 +41,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             await etnyContract.getProvider().waitForTransaction(transactionHash);
             const txReceipt = await etnyContract.getProvider().getTransactionReceipt(transactionHash);
             console.log(txReceipt);
-            // TODO add dialog
-            if (!txReceipt && txReceipt.status === 0) {
-                return false;
-            }
-
-            return true;
+            return !(!txReceipt && txReceipt.status === 0);
         }
 
         const createDORequest = async (scriptHash, filesetHash) => {
@@ -76,17 +72,15 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             try {
                 console.log('Waiting for the order to be placed and be taken into processing...');
                 let orderId = -1;
-                const resCount = await etnyContract.getOrdersCount();
-                const count = resCount.toNumber();
+                const ordersCount = await etnyContract.getOrdersCount();
+                const count = ordersCount.toNumber();
                 console.log(`Orders count: ${count}`);
 
                 await waitUntilDoRequestIdIsValid();
 
                 for (let i = count - 1, _pj_a = count - 5; i > _pj_a; i += -1) {
-                    // console.log(i);
                     if (__dorequest !== 0) {
                         const order = await etnyContract.getOrder(i);
-                        // console.log(order);
                         if (order[2].toNumber() === __dorequest && order[4].toNumber() === 0) {
                             orderId = i;
                             break;
@@ -112,29 +106,28 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             console.log(tx);
             const isProcessed = await waitForTransactionToBeProcessed(tx.hash);
             if (!isProcessed) {
-                console.log("Unable to approve order, please check conectivity with bloxberg node");
+                console.log("Unable to approve order, please check connectivity with bloxberg node");
                 return;
             }
-            console.log(`Order approved succcessfully!`)
+            console.log(`Order approved successfully!`)
             console.log(`TX hash: ${tx.hash}`);
         }
 
         const getResultFromOrder = async (orderId) => {
             console.log('Waiting for task to finish...');
             try {
-                const result = await etnyContract.getResultFromOrder(orderId);
-                console.log(result);
-                const ipfsResult = await ipfs.getFromIPFS(result);
+                const ipfsResultHash = await etnyContract.getResultFromOrder(orderId);
+                console.log(ipfsResultHash);
+                const ipfsResult = await ipfs.getFromIPFS(ipfsResultHash);
                 console.log(ipfsResult);
 
                 const transaction = await etnyContract.getProvider().getTransaction(__dohash);
                 const block = await etnyContract.getProvider().getBlock(transaction.blockNumber);
-                let blockTimestamp = block.timestamp;
-                let blockDatetime = new Date(blockTimestamp * 1000).toString();
-                let endBlockNumber = await etnyContract.getProvider().getBlockNumber();
-                let startBlockNumber = endBlockNumber - 100;
+                const blockTimestamp = block.timestamp;
+                const endBlockNumber = await etnyContract.getProvider().getBlockNumber();
+                const startBlockNumber = endBlockNumber - 100;
 
-                let resultTransactionHash, resultBlockTimestamp, resultBlockDateTime;
+                let resultTransactionHash, resultBlockTimestamp;
 
                 for (let i = endBlockNumber; i >= startBlockNumber; i--) {
                     const block = await etnyContract.getProvider().getBlockWithTransactions(i);
@@ -144,7 +137,6 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                         if (transaction.to === etnyContract.contractAddress && transaction.data) {
                             resultTransactionHash = transaction.hash;
                             resultBlockTimestamp = block.timestamp;
-                            resultBlockDateTime = new Date(resultBlockTimestamp * 1000);
                         }
                     }
                 }
@@ -158,7 +150,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     scriptHash: __scriptHash,
                     fileSetHash: __fileSetHash,
                     publicTimestamp: blockTimestamp,
-                    resultHash: result,
+                    resultHash: ipfsResultHash,
                     resultValue: ipfsResult,
                     resultTimestamp: resultBlockTimestamp
                 };
@@ -171,33 +163,67 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         /// main method
         const runOnEthernity = async () => {
-            // extracting code from all the code cells
-            const code = extractPythonCode();
-
-            // uploading all python code to IPFS and received hash of transaction
-            const scriptHash = await ipfs.uploadToIPFS(code);
-            __scriptHash = scriptHash;
-            const filesetHash = await ipfs.uploadToIPFS("ethernithy");
-            __fileSetHash = filesetHash;
-
-            // create new DO Request
-            await createDORequest(scriptHash, filesetHash);
-
-            // search for the above created order
-            const orderId = await findOrderId();
-
-            // orderId = 4161;
-            if (orderId === 0) return;
-
-            // approve order
-            await approveOrder(orderId);
-
-            // get processed result from the order and create a certificate
-            const certificateObject = await getResultFromOrder(orderId);
-            const formattedCertificate = certificate.generateCertificate(certificateObject);
+            // // extracting code from all the code cells
+            // const code = extractPythonCode();
+            //
+            // // uploading all python code to IPFS and received hash of transaction
+            // __scriptHash = await ipfs.uploadToIPFS(code);
+            // __fileSetHash = await ipfs.uploadToIPFS(FILESET_DATA);
+            //
+            // // create new DO Request
+            // await createDORequest(__scriptHash, __fileSetHash);
+            //
+            // // search for the above created order
+            // const orderId = await findOrderId();
+            //
+            // if (orderId === 0) return;
+            //
+            // // approve order
+            // await approveOrder(orderId);
+            //
+            // //get processed result from the order and create a certificate
+            // const certificateObject = await getResultFromOrder(orderId);
+            // const formattedCertificate = certificate.generateCertificate(certificateObject);
+            // // console.log(formattedCertificate);
+            const formattedCertificate = '\n            <div style="font-family: sans-serif;font-size: 14px;color: #16a34a;">\n              <span>#########################################################################################################################</span>\n              <br>              \n              <span>############################################## ETHERNITY CLOUD CERTIFICATE ##############################################</span>\n              <br>              \n              <span>#########################################################################################################################</span>\n              <br>              \n              <span>##########&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INFO]   Contract address: 0x549A6E06BB2084100148D50F51CF77a3436C3Ae7&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INFO]   Input transaction: 0xa63c1b6bcdc339bde74eea8d64930e0cdabd5000281fab1a5b63b135a06fa96b&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INFO]   Output transaction: 0x18631023534c13cf84b55f25e0e6e98df70a9d97d22dbb81e9815902eedaacd7&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INFO]   PoX processing order: 5201&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INPUT]  Public image: QmSwHhD3puVphVUqFUVGqZA8eMYNBehr4HDtXLvdNbPP4g:etny-pynithy&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INPUT]  Public script: QmeQV3PJg5EZt5aZhAYJVgyk65CmzsTgsNutmbHMd8ueUC &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INPUT]  Public fileset: Qme3i7UGCq92wiYHrVrfjKxfv8XxCNjeCfFAd5NJQdedUN&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [INPUT]  Public timestamp: 10/11/2022 11:50:10 [1668073810]&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [OUTPUT] Public result hash: QmYyZb5VXDdm7XDvPyipf64epofbSDucRjtxf9A1igpc2A&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [OUTPUT] Public result: 1001&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>##########  [OUTPUT] Timestamp: 10/11/2022 11:41:20 [1668073280] &emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;##########</span>\n              <br>\n              <span>#########################################################################################################################</span>\n              <br>\n              <span>#########################################################################################################################</span>\n            </div>\n            '
             insertCertificate(formattedCertificate);
-
-            await createBloxbergCertificate(certificateObject);
+            const sha256FromCertificate = await certificate.generateSha256FromImage($);
+            // const certificateData = await createBloxbergCertificate(certificateObject, sha256FromCertificate);
+            const certificateData = [
+                {
+                    "@context": [
+                        "https://www.w3.org/2018/credentials/v1",
+                        "https://w3id.org/bloxberg/schema/research_object_certificate_v1"
+                    ],
+                    "type": [
+                        "VerifiableCredential",
+                        "BloxbergCredential"
+                    ],
+                    "issuer": "https://raw.githubusercontent.com/bloxberg-org/issuer_json/master/issuer.json",
+                    "issuanceDate": "2022-11-10T11:05:39.894484+00:00",
+                    "credentialSubject": {
+                        "id": "https://blockexplorer.bloxberg.org/address/0xAfebaB49BA2D05091A58FA89ecA4Bfd99AeF1EAd",
+                        "issuingOrg": {
+                            "id": "https://bloxberg.org"
+                        }
+                    },
+                    "id": "https://bloxberg.org",
+                    "crid": "f0aa8102a88dec14011ffed573d6ac576c904bcd90e8187b203442d0419b92a4",
+                    "cridType": "sha2-256",
+                    "metadataJson": "{\"contractAddress\": \"0x549A6E06BB2084100148D50F51CF77a3436C3Ae7\", \"inputTransactionHash\": \"0xe6ae7e1203bffdacec57f0acbfad32ce42c2133b5a5f78f0b910b46ac4f73a38\", \"outputTransactionHash\": \"0x1942acfc7bff4087442f8b51b67233b911c045d1a80928d8b241de690570b149\", \"orderId\": 5207, \"imageHash\": \"QmSwHhD3puVphVUqFUVGqZA8eMYNBehr4HDtXLvdNbPP4g:etny-pynithy\", \"scriptHash\": \"QmVgk97tVFExeSyMR7a644Rk67pXjzuTV29K24m6Y4YDAe\", \"fileSetHash\": \"QmcSSf3THGo9g5ezg3vy56zCVjkEb66beFccNyjp8qKBZe\", \"publicTimestamp\": 1668078235, \"resultHash\": \"QmdytmR4wULMd3SLo6ePF4s3WcRHWcpnJZ7bHhoj3QB13v\", \"resultValue\": \"1\\n\", \"resultTimestamp\": 1668077695}",
+                    "proof": {
+                        "type": "MerkleProof2019",
+                        "created": "2022-11-10T11:05:45.213386",
+                        "proofValue": "z7veGu1qoKR3AS5AmKGfkdUu4KbetNSwr2nvNGKwzhiu5tzSZptbRX763EsQ8vyyZET7BdD5DMB8474iy38fKwihU3L6Z6ZfFqQHr9qmJJv2TpKMFaDBZK7vDbFtVQWDbmCBLDEbe9Q32QTX2LWU7ACrdjKgcW1bu4pPjvNQVUkutovFo6EZd4kTo8cTZa9eqcC1VFJ7oAFpVQTs3MZWskPV97a1WYpHfbtyK3iXTNZX2TYseeuyFkHK9f4bf1ZccReUXCDBiKGcryi9BjLmA8mZiyqBKCFjDn8tSzP25CgPwKGyC9ntvb",
+                        "proofPurpose": "assertionMethod",
+                        "verificationMethod": "ecdsa-koblitz-pubkey:0xD748BF41264b906093460923169643f45BDbC32e",
+                        "ens_name": "mpdl.berg"
+                    }
+                }
+            ];
+            if (certificateData) {
+                await bloxbergAPI.generatePDFForCertificate(certificateData);
+            }
         }
 
         const connectToMetaMaskAndSign = async () => {
@@ -210,17 +236,15 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         }
 
         const extractPythonCode = () => {
-            const source_code = Jupyter.notebook.get_cells().map(function (cell) {
-                if (cell.cell_type == "code") {
+            // console.log(source_code);
+            return Jupyter.notebook.get_cells().map(function (cell) {
+                if (cell.cell_type === "code") {
                     const source = cell.code_mirror.getValue();
                     if (!source.startsWith("%%javascript")) {
                         return source;
                     }
                 }
             }).join("\n");
-
-            console.log(source_code);
-            return source_code;
         }
 
         const insertCertificate = (certificate) => {
@@ -229,11 +253,16 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             cell.render();
         }
 
-        const createBloxbergCertificate = async (certificate) => {
-            const walletAddress = await etnyContract.getCurrentWallet();
-            const res = await bloxbergAPI.createCertificate(walletAddress, '0x0e4ded5319861c8daac00d425c53a16bd180a7d01a340a0e00f7dede40d2c9f6', certificate)
-            console.log(res);
-        };
+        const createBloxbergCertificate = async (certificate, crid) => {
+            try {
+                const walletAddress = await etnyContract.getCurrentWallet();
+                const res = await bloxbergAPI.createCertificate(walletAddress, crid, certificate)
+                console.log(res);
+                return res;
+            } catch (e) {
+                return null;
+            }
+        }
 
         const runOnEthernityHandler = async () => {
             const res = await connectToMetaMaskAndSign();
@@ -327,5 +356,5 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         return {
             load_ipython_extension: load_ipython_extension,
-        };
+        }
     });

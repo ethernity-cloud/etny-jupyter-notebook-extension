@@ -1,4 +1,8 @@
 define(function (require, exports, module) {
+    const html2canvas = require('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    const js_sha256 = require('https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js');
+    const DIV_IMAGE_ID = 'ethernity_certificate';
+
     const HASH_LENGTH = 121;
     const START_HASH_LENGTH = 10;
     const END_HASH_LENGTH = 10;
@@ -70,10 +74,33 @@ define(function (require, exports, module) {
               <span>${generateHash()}</span>
               <br>
               <span>${generateHash()}</span>
-            </div>
-            `;
+            </div>`;
     }
+
+    const saveImage = (canvas) => {
+        const link = document.createElement('a');
+        link.download = 'filename.png';
+        link.href = canvas.toDataURL()
+        link.click();
+    }
+
+    const generateSha256FromImage = async ($) => {
+        try {
+            const element = $(`#${DIV_IMAGE_ID}`);
+            const canvas = await html2canvas(element[0]);
+            saveImage(canvas);
+            const data = canvas.toDataURL();
+            console.log(data);
+            const sha = js_sha256.sha256(data.replace('data:image/png;base64,', ''));
+            console.log(sha);
+            return sha;
+        } catch (e) {
+            return null;
+        }
+    };
+
     module.exports = {
-        generateCertificate
+        generateCertificate,
+        generateSha256FromImage
     };
 });
