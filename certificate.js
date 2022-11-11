@@ -27,7 +27,8 @@ define(function (require, exports, module) {
         } else {
             const textLength = text.length;
             let emptyLength = HASH_LENGTH - START_HASH_LENGTH - END_HASH_LENGTH - textLength;
-            emptyLength = emptyLength < 0 ? 0 : emptyLength - 1;
+            emptyLength = emptyLength < 0 ? 0 : emptyLength;
+            console.log(emptyLength);
             return `${generateHash(START_HASH_LENGTH)} ${text}${'&ensp;'.repeat(emptyLength)}${generateHash(END_HASH_LENGTH)}`
         }
     }
@@ -36,7 +37,7 @@ define(function (require, exports, module) {
         const publicTimestampDate = new Date(certificate.publicTimestamp * 1000);
         const timestampDate = new Date(certificate.resultTimestamp * 1000);
         return `
-            <div style="font-family: sans-serif;font-size: 14px;color: #16a34a;">
+            <div style="font-family: monospace;font-size: 14px;color: #16a34a;">
               <span>${generateHash()}</span>
               <br>              
               <span>${generateTitle('ETHERNITY CLOUD CERTIFICATE')}</span>
@@ -45,23 +46,23 @@ define(function (require, exports, module) {
               <br>              
               <span>${insertCertificateRow(true)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INFO]   Contract address: ${certificate.contractAddress.trim()}`)}</span>
+              <span>${insertCertificateRow(false, ` [INFO] Contract address: ${certificate.contractAddress}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INFO]   Input transaction: ${certificate.inputTransactionHash.trim()}`)}</span>
+              <span>${insertCertificateRow(false, ` [INFO] Input transaction: ${certificate.inputTransactionHash.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INFO]   Output transaction: ${certificate.outputTransactionHash.trim()}`)}</span>
+              <span>${insertCertificateRow(false, ` [INFO] Output transaction: ${certificate.outputTransactionHash.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INFO]   PoX processing order: ${certificate.orderId}`)}</span>
+              <span>${insertCertificateRow(false, ` [INFO] PoX processing order: ${certificate.orderId}`)}</span>
               <br>
               <span>${insertCertificateRow(true)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INPUT]  Public image: ${certificate.imageHash.trim()}`)}</span>
+              <span>${insertCertificateRow(false, ` [INPUT] Public image: ${certificate.imageHash.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INPUT]  Public script: ${certificate.scriptHash.trim()} `)}</span>
+              <span>${insertCertificateRow(false, ` [INPUT] Public script: ${certificate.scriptHash.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INPUT]  Public fileset: ${certificate.fileSetHash.trim()}`)}</span>
+              <span>${insertCertificateRow(false, ` [INPUT] Public fileset: ${certificate.fileSetHash.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INPUT]  Public timestamp: ${formatDate(publicTimestampDate)} [${certificate.publicTimestamp}]`)}</span>
+              <span>${insertCertificateRow(false, ` [INPUT] Public timestamp: ${formatDate(publicTimestampDate)} [${certificate.publicTimestamp}]`)}</span>
               <br>
               <span>${insertCertificateRow(true)}</span>
               <br>
@@ -69,7 +70,7 @@ define(function (require, exports, module) {
               <br>
               <span>${insertCertificateRow(false, ` [OUTPUT] Public result: ${certificate.resultValue.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${formatDate(timestampDate)} [${certificate.resultTimestamp}] `)}</span>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${formatDate(timestampDate)} [${certificate.resultTimestamp}]`)}</span>
               <br>
               <span>${generateHash()}</span>
               <br>
@@ -84,14 +85,28 @@ define(function (require, exports, module) {
         link.click();
     }
 
+    const getBufferFromCanvas = (canvas) => {
+        return new Promise((resolve, reject) => {
+            try {
+                canvas.toBlob((blob) => {
+                    blob.arrayBuffer().then(buff => {
+                        return resolve(buff);
+                    });
+                });
+            } catch (err) {
+                console.log(err);
+                reject(err);
+            }
+        })
+
+    }
     const generateSha256FromImage = async ($) => {
         try {
             const element = $(`#${DIV_IMAGE_ID}`);
             const canvas = await html2canvas(element[0]);
             saveImage(canvas);
-            const data = canvas.toDataURL();
-            console.log(data);
-            const sha = js_sha256.sha256(data.replace('data:image/png;base64,', ''));
+            const buff = await getBufferFromCanvas(canvas);
+            const sha = js_sha256.sha256(buff);
             console.log(sha);
             return sha;
         } catch (e) {
