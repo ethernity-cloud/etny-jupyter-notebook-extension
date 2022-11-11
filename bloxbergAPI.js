@@ -44,7 +44,7 @@ define(function (require, exports, module) {
                 .then((data) => {
                     let a = document.createElement('a');
                     a.href = URL.createObjectURL(data);
-                    a.setAttribute('download', `EthernityCloudCertificate-${new Date().getTime()}`);
+                    a.setAttribute('download', `BloxbergCertificate-${new Date().getTime()}`);
                     a.click();
                 })
                 .catch((err) => console.error(err));

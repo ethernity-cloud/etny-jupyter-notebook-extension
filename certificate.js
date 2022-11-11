@@ -80,8 +80,8 @@ define(function (require, exports, module) {
 
     const saveImage = (canvas) => {
         const link = document.createElement('a');
-        link.download = 'filename.png';
-        link.href = canvas.toDataURL()
+        link.download = `EthernityCloudCertificate.png`;
+        link.href = canvas.toDataURL();
         link.click();
     }
 
