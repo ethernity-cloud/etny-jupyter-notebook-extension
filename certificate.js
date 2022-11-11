@@ -1,16 +1,12 @@
 define(function (require, exports, module) {
     const html2canvas = require('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     const js_sha256 = require('https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js');
+    const utils = require('./utils');
     const DIV_IMAGE_ID = 'ethernity_certificate';
 
     const HASH_LENGTH = 121;
     const START_HASH_LENGTH = 10;
     const END_HASH_LENGTH = 10;
-    const formatDate = (dt) => {
-        const padL = (nr, len = 2, chr = `0`) => `${nr}`.padStart(2, chr);
-
-        return `${padL(dt.getDate())}/${padL(dt.getMonth() + 1)}/${dt.getFullYear()} ${padL(dt.getHours())}:${padL(dt.getMinutes())}:${padL(dt.getSeconds())}`;
-    }
 
     const generateHash = (length) => "#".repeat(length || HASH_LENGTH);
 
@@ -28,7 +24,6 @@ define(function (require, exports, module) {
             const textLength = text.length;
             let emptyLength = HASH_LENGTH - START_HASH_LENGTH - END_HASH_LENGTH - textLength;
             emptyLength = emptyLength < 0 ? 0 : emptyLength;
-            console.log(emptyLength);
             return `${generateHash(START_HASH_LENGTH)} ${text}${'&ensp;'.repeat(emptyLength)}${generateHash(END_HASH_LENGTH)}`
         }
     }
@@ -62,7 +57,7 @@ define(function (require, exports, module) {
               <br>
               <span>${insertCertificateRow(false, ` [INPUT] Public fileset: ${certificate.fileSetHash.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [INPUT] Public timestamp: ${formatDate(publicTimestampDate)} [${certificate.publicTimestamp}]`)}</span>
+              <span>${insertCertificateRow(false, ` [INPUT] Public timestamp: ${utils.formatDate(publicTimestampDate)} [${certificate.publicTimestamp}]`)}</span>
               <br>
               <span>${insertCertificateRow(true)}</span>
               <br>
@@ -70,7 +65,7 @@ define(function (require, exports, module) {
               <br>
               <span>${insertCertificateRow(false, ` [OUTPUT] Public result: ${certificate.resultValue.trim()}`)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${formatDate(timestampDate)} [${certificate.resultTimestamp}]`)}</span>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${utils.formatDate(timestampDate)} [${certificate.resultTimestamp}]`)}</span>
               <br>
               <span>${generateHash()}</span>
               <br>
@@ -107,7 +102,6 @@ define(function (require, exports, module) {
             saveImage(canvas);
             const buff = await getBufferFromCanvas(canvas);
             const sha = js_sha256.sha256(buff);
-            console.log(sha);
             return sha;
         } catch (e) {
             return null;
