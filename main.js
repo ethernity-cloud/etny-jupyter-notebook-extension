@@ -11,6 +11,7 @@
 define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './utils'],
     function (requirejs, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, utils) {
         let nodeAddressMetadata = '';
+        let authorName, titleOfResearch, emailAddress = '';
 
         let __dohash = null;
         let __dorequest = 0;
@@ -27,13 +28,12 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const initialize = async () => {
             ipfs.initialize();
             await etnyContract.initContract();
-            await listenForAddDORequestEvent();
         }
 
         const listenForAddDORequestEvent = async () => {
             const event = async (_from, _doRequest) => {
                 const walletAddress = etnyContract.getCurrentWallet();
-                if (_from === walletAddress) {
+                if (_from.toLowerCase() === walletAddress.toLowerCase()) {
                     __dorequest = _doRequest.toNumber();
                     loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
                     etnyContract.getContract().off("_addDORequestEV", event);
@@ -119,7 +119,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                 loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to approve order, please check connectivity with Bloxberg node");
                 return;
             }
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order approved successfully!`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order successfully approved!`);
             // loadingText = cells.writeMessageToCell(loadingCell, loadingText,`TX hash: ${tx.hash}`);
         }
 
@@ -153,6 +153,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                 }
 
                 return {
+                    author: authorName,
+                    projectDescription: titleOfResearch,
+                    emailAddress: emailAddress,
                     contractAddress: etnyContract.contractAddress,
                     inputTransactionHash: __dohash,
                     outputTransactionHash: resultTransactionHash,
@@ -175,9 +178,10 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         /// main method
         const runOnEthernity = async () => {
+            await listenForAddDORequestEvent();
             // extracting code from all the code cells
             const code = cells.extractPythonCode();
-            console.log(code);
+
             // uploading all python code to IPFS and received hash of transaction
             __scriptHash = await ipfs.uploadToIPFS(code);
             __fileSetHash = await ipfs.uploadToIPFS(FILESET_DATA);
@@ -222,23 +226,30 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             }
         }
 
-        const runOnEthernityHandler = async () => {
+        const cleanup = async () => {
             loadingText = '';
             findOrderRepeats = 1;
             getResultFromOrderRepeats = 1;
 
             await cells.deleteLastCells();
-            loadingCell = await cells.insertLoadingCell(loadingText);
+        }
 
+        const runOnEthernityHandler = async () => {
+            await cleanup();
+            loadingCell = await cells.insertLoadingCell(loadingText);
             loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Starting running task...');
 
             const res = await connectToMetaMaskAndSign();
 
             if (res) {
+                const authorInput = $(`<input id="authorName" class='form-control' type='text' value=''/>`);
+                const emailAddressInput = $(`<input id="emailAddress" class='form-control' type='text' value=''/>`);
+                const titleOrDescriptionInput = $(`<input id="titleOfResearch" class='form-control' type='text' value=''/>`);
                 const nodeAddressCheckbox = $(`
                     <div class="checkbox">
                         <label>
-                          <input id="runOnNodeCheckbox" type="checkbox"> Would you like to run the code on a specific node?
+                          <input id="runOnNodeCheckbox" type="checkbox" style="width: 14px;height: 14px"> 
+                          <span style="font-size: 14px">Would you like to run the code on a specific node?</span>
                         </label>
                     </div>`);
                 const nodeAddress = $(`<input id="nodeAddress" class='form-control' type='text' value='' disabled/>`);
@@ -256,6 +267,17 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
                 dialog.modal({
                     title: "Ethernity Cloud", body: $("<div></div>")
+                        .append("Every field is optional, it is only to enhance the generated certificate at the end of the process.")
+                        .append($("<br/><br/>"))
+                        .append($("<label style='font-weight: bold;'>Author or Group Name</label>"))
+                        .append(authorInput)
+                        .append($("<br/><br/>"))
+                        .append($("<label style='font-weight: bold;'>Title or Brief Description of Research</label>"))
+                        .append(titleOrDescriptionInput)
+                        .append($("<br/><br/>"))
+                        .append($("<label style='font-weight: bold;'>Email Address</label>"))
+                        .append(emailAddressInput)
+                        .append($("<br/><br/>"))
                         .append("If bellow checkbox is checked the code will be delegated to a specified node, if not, a random node will be selected from the network.")
                         .append($("<br/><br/>"))
                         .append(nodeAddressCheckbox)
@@ -264,6 +286,10 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                         'Run on Ethernity Cloud': {
                             class: "btn-primary", click: async function (e) {
                                 e.preventDefault();
+                                authorName = $('#authorName').val();
+                                titleOfResearch = $('#titleOfResearch').val();
+                                emailAddress = $('#emailAddress').val();
+
                                 if ($('#runOnNodeCheckbox').is(':checked')) {
                                     const nodeAddress = $('#nodeAddress').val();
                                     if (etnyContract.isAddress(nodeAddress)) {
