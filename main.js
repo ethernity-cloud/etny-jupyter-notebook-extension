@@ -1,6 +1,6 @@
 /**
- * etny.js
- * An extension that allows to execute a task using an existing enclave provided by Ethernity Network
+ * main.js
+ * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network
  *
  * @version 0.2.0
  * @author  Ciprian Florea, ciprian@ethernity.cloud
@@ -18,21 +18,24 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         let __fileSetHash = '';
         let loadingCell = null;
         let loadingText = '';
+        let findOrderRepeats = 1;
+        let getResultFromOrderRepeats = 1;
 
         const LAST_BLOCKS = 20;
         const FILESET_DATA = 'ethernity';
 
         const initialize = async () => {
             ipfs.initialize();
-            etnyContract.initContract();
+            await etnyContract.initContract();
             await listenForAddDORequestEvent();
         }
 
         const listenForAddDORequestEvent = async () => {
-            const event = (_from, _rowNumber) => {
-                if (_from === etnyContract.contractAddress) {
-                    __dorequest = _rowNumber.toNumber();
-                    writeMessageToCell(`Request ${__dorequest} created successfully!`);
+            const event = async (_from, _doRequest) => {
+                const walletAddress = etnyContract.getCurrentWallet();
+                if (_from === walletAddress) {
+                    __dorequest = _doRequest.toNumber();
+                    loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
                     etnyContract.getContract().off("_addDORequestEV", event);
                 }
             }
@@ -51,19 +54,19 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         }
 
         const createDORequest = async (scriptHash, filesetHash) => {
-            writeMessageToCell(`Submitting transaction for DO request on ${utils.formatDate()}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Submitting transaction for DO request on ${utils.formatDate()}`);
             // add here call to SC(smart contract)
             const tx = await callContractAddDORequest(scriptHash, filesetHash, nodeAddressMetadata);
             const transactionHash = tx.hash;
             __dohash = transactionHash;
 
-            writeMessageToCell(`Waiting for transaction ${transactionHash} to be processed...`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Waiting for transaction ${transactionHash} to be processed...`);
             const isProcessed = await waitForTransactionToBeProcessed(transactionHash);
             if (!isProcessed) {
-                writeMessageToCell("Unable to create request, please check connectivity with Bloxberg node");
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to create request, please check connectivity with Bloxberg node");
                 return;
             }
-            writeMessageToCell(`TX hash: ${transactionHash}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was processed`);
         }
 
         const waitUntilDoRequestIdIsValid = async () => {
@@ -75,18 +78,18 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         const findOrderId = async () => {
             try {
-                writeMessageToCell('Waiting for the order to be placed and be taken into processing...');
+                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `(${findOrderRepeats}) Waiting for the order to be placed and be taken into processing...`);
                 let orderId = -1;
                 const ordersCount = await etnyContract.getOrdersCount();
                 const count = ordersCount.toNumber();
-                // updateTextForLoadingCell(`Orders count: ${count}`);
 
                 await waitUntilDoRequestIdIsValid();
 
                 for (let i = count - 1, _pj_a = count - 5; i > _pj_a; i += -1) {
                     if (__dorequest !== 0) {
                         const order = await etnyContract.getOrder(i);
-                        if (order[2].toNumber() === __dorequest && order[4].toNumber() === 0) {
+                        // console.log(order);
+                        if (order.doRequest.toNumber() === __dorequest && order.status.toNumber() === 0) {
                             orderId = i;
                             break;
                         }
@@ -95,6 +98,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
                 if (orderId === -1) {
                     await utils.delay(2000);
+                    findOrderRepeats = findOrderRepeats + 1;
                     return await findOrderId();
                 } else {
                     return orderId;
@@ -102,6 +106,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             } catch (ex) {
                 console.error(ex.message);
                 await utils.delay(2000);
+                findOrderRepeats = findOrderRepeats + 1;
                 return await findOrderId();
             }
         }
@@ -111,21 +116,21 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             // console.log(tx);
             const isProcessed = await waitForTransactionToBeProcessed(tx.hash);
             if (!isProcessed) {
-                writeMessageToCell("Unable to approve order, please check connectivity with Bloxberg node");
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to approve order, please check connectivity with Bloxberg node");
                 return;
             }
-            writeMessageToCell(`Order approved successfully!`)
-            writeMessageToCell(`TX hash: ${tx.hash}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order approved successfully!`);
+            // loadingText = cells.writeMessageToCell(loadingCell, loadingText,`TX hash: ${tx.hash}`);
         }
 
         const getResultFromOrder = async (orderId) => {
-            writeMessageToCell('Waiting for the task to be processed...');
+            loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `(${getResultFromOrderRepeats}) Waiting for the task to be processed...`);
             try {
                 const ipfsResultHash = await etnyContract.getResultFromOrder(orderId);
-                writeMessageToCell(`Task successfully processed at ${utils.formatDate()}`);
-                writeMessageToCell(`Result IPFS hash: ${ipfsResultHash}`);
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task successfully processed at ${utils.formatDate()}`);
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result IPFS hash: ${ipfsResultHash}`);
                 const ipfsResult = await ipfs.getFromIPFS(ipfsResultHash);
-                writeMessageToCell(`Result value: ${ipfsResult}`);
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${ipfsResult}`);
 
                 const transaction = await etnyContract.getProvider().getTransaction(__dohash);
                 const block = await etnyContract.getProvider().getBlock(transaction.blockNumber);
@@ -163,6 +168,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
             } catch (ex) {
                 await utils.delay(5000);
+                getResultFromOrderRepeats = getResultFromOrderRepeats + 1;
                 return await getResultFromOrder(orderId);
             }
         }
@@ -170,8 +176,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         /// main method
         const runOnEthernity = async () => {
             // extracting code from all the code cells
-            const code = extractPythonCode();
-
+            const code = cells.extractPythonCode();
+            console.log(code);
             // uploading all python code to IPFS and received hash of transaction
             __scriptHash = await ipfs.uploadToIPFS(code);
             __fileSetHash = await ipfs.uploadToIPFS(FILESET_DATA);
@@ -190,7 +196,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             //get processed result from the order and create a certificate
             const certificateObject = await getResultFromOrder(orderId);
             const formattedCertificate = certificate.generateCertificate(certificateObject);
-            insertCertificate(formattedCertificate);
+            await cells.insertCertificateCell(formattedCertificate);
             const sha256FromCertificate = await certificate.generateSha256FromImage($);
             const certificateData = await createBloxbergCertificate(certificateObject, sha256FromCertificate);
             if (certificateData) {
@@ -207,44 +213,6 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             }
         }
 
-        const extractPythonCode = () => {
-            // console.log(source_code);
-            return Jupyter.notebook.get_cells().map(function (cell) {
-                if (cell.cell_type === "code") {
-                    const source = cell.code_mirror.getValue();
-                    if (!source.startsWith("%%javascript")) {
-                        return source;
-                    }
-                }
-            }).join("\n");
-        }
-
-        const insertLoadingCell = (text) => {
-            loadingCell = Jupyter.notebook.insert_cell_at_bottom('code');
-            loadingCell.set_text(text);
-            loadingCell.render();
-
-            setTimeout(() => {
-                cells.setState($, loadingCell, 'frozen');
-            }, 1000);
-        }
-
-        const writeMessageToCell = (text) => {
-            loadingText = `${loadingText}${text}\n`;
-            loadingCell.set_text(loadingText);
-            loadingCell.render();
-        }
-
-        const insertCertificate = (certificate) => {
-            let cell = Jupyter.notebook.insert_cell_at_bottom('markdown');
-            cell.set_text(`<div id="ethernity_certificate">${certificate}</div>`);
-            cell.render();
-
-            setTimeout(() => {
-                cells.setState($, cell, 'frozen');
-            }, 1000);
-        }
-
         const createBloxbergCertificate = async (certificate, crid) => {
             try {
                 const walletAddress = await etnyContract.getCurrentWallet();
@@ -255,9 +223,14 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         }
 
         const runOnEthernityHandler = async () => {
-            insertLoadingCell(loadingText);
+            loadingText = '';
+            findOrderRepeats = 1;
+            getResultFromOrderRepeats = 1;
 
-            writeMessageToCell('Starting running task...');
+            await cells.deleteLastCells();
+            loadingCell = await cells.insertLoadingCell(loadingText);
+
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Starting running task...');
 
             const res = await connectToMetaMaskAndSign();
 
@@ -329,8 +302,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             }
         }
 
-        const load_ipython_extension = async () => {
-            await initialize();
+        const createEtnyButton = () => {
             $('#maintoolbar-container').append('<button id="runOnEthernityButton" style="margin-left: 4px;" class="btn btn-default" type="submit"><div style="display: flex;\n' +
                 '  justify-content: center;\n' +
                 '  align-items: center;">' +
@@ -344,6 +316,11 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             setTimeout(() => {
                 $('#runOnEthernityButton').click(async () => await runOnEthernityHandler());
             }, 1000);
+        }
+
+        const load_ipython_extension = async () => {
+            await initialize();
+            createEtnyButton();
         }
 
         return {

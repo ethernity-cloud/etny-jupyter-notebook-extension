@@ -5,7 +5,7 @@ define(function (require, exports, module) {
     const etnyContractAddress = "0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";
     const IMAGE_HASH = "QmSwHhD3puVphVUqFUVGqZA8eMYNBehr4HDtXLvdNbPP4g:etny-pynithy";
 
-    let provider, signer, etnyContract = null, etnyContactWithProvider;
+    let provider, signer, etnyContract = null, etnyContactWithProvider, currentWallet;
 
     const isAddress = (address) => {
         try {
@@ -16,11 +16,12 @@ define(function (require, exports, module) {
         return true;
     };
 
-    const initContract = () => {
+    const initContract = async () => {
         provider = new ethers.providers.Web3Provider(window.ethereum);
         signer = provider.getSigner();
         etnyContract = new ethers.Contract(etnyContractAddress, abi, signer);
         etnyContactWithProvider = new ethers.Contract(etnyContractAddress, abi, provider);
+        currentWallet = await _getCurrentWallet();
     }
 
     const getContract = () => {
@@ -30,8 +31,11 @@ define(function (require, exports, module) {
     const getProvider = () => {
         return provider;
     }
+    const getCurrentWallet = () => {
+        return currentWallet;
+    }
 
-    const getCurrentWallet = async () => {
+    const _getCurrentWallet = async () => {
         const accounts = await provider.listAccounts();
         return accounts[0];
     }
