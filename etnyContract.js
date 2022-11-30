@@ -3,7 +3,7 @@ define(function (require, exports, module) {
     const abi = require('./abi');
 
     const etnyContractAddress = "0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";
-    const IMAGE_HASH = "QmSwHhD3puVphVUqFUVGqZA8eMYNBehr4HDtXLvdNbPP4g:etny-pynithy";
+    const IMAGE_HASH = "QmexKQm3wqeV63kR1G83ktCzodMAsdYRi4vV4RGhn1e1NT:etny-pynithy";
 
     let provider, signer, etnyContract = null, etnyContactWithProvider, currentWallet;
 
