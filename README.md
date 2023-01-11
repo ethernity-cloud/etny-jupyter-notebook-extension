@@ -43,13 +43,14 @@ And then we have to install the nbextensions by using the command below:
 pip install jupyter_contrib_nbextensions
 ```
 ### 7. Clone the repository
-Now, we are ready to clone the repository with our jupyter notebook addon
+Now, we are ready to clone the repository with our jupyter notebook addon in our home folder
 ```
-git clone https://github.com/ethernity-cloud/etny-jupyter-notebook-extension.git
+cd && git clone https://github.com/ethernity-cloud/etny-jupyter-notebook-extension.git
 ```
-### 8. Copy the repo folder to the required path 
+### 8. Copy the cloned repo folder to the required path 
 ```
-copy cloned folder from location to /home/dim3nsi0n/.local/lib/python3.10/site-packages/jupyter_contrib_nbextensions/nbextensions/
+cd && cp -R etny-jupyter-notebook-extension /home/{$your_username}/.local/lib/python3.10/site-packages/jupyter_contrib_nbextensions/nbextensions/
+*make sure to replace {$your_username} with your actual Linux username
 ```
 ### 9. Activate the extension for the current user
 ```
