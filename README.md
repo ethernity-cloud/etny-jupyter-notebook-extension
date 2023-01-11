@@ -1,5 +1,6 @@
 # etny-jupyter-notebook-extension
-Jupyter Notebook extension to run python tasks on Ethernity Cloud Network.
+Jupyter Notebook is an open-source web application that allows you to create and share documents that contain live code, equations, visualizations, and narrative text. It is a powerful tool for data analysis, visualization, and exploration. 
+The extension enables scientific collaboration in a safe and open manner by providing researchers and scientists with a method of obtaining proof of code execution and timestamping as an NFT on the Bloxberg blockhain.
 
 ## Requirements
 You would need the following to successfully run the EC Jupyter Notebook Extension
