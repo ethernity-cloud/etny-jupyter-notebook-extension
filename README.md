@@ -61,3 +61,10 @@ jupyter contrib nbextension install --user
 ```
 jupyter notebook
 ```
+
+
+## How to use
+We have to type our code which needs to be executed on the Ethernity Cloud ecosystem in the first cell of Jupyter Notebook.
+
+## Demo
+A video on how it works will be made available soon
