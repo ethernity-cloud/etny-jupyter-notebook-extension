@@ -61,7 +61,9 @@ define(function (require, exports, module) {
               <br>
               <span>${insertCertificateRow(true)}</span>
               <br>
-              <span>${insertCertificateRow(false, ` [OUTPUT] Public result hash: ${certificate.resultHash.trim()}`)}</span>              
+              <span>${insertCertificateRow(false, ` [OUTPUT] Public result hash: ${certificate.resultHash.trim()}`)}</span>        
+              <br>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Public result task code: ${certificate.resultTaskCode.trim()}`)}</span>              
               <br>
               <span>${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${utils.formatDate(timestampDate)} [${certificate.resultTimestamp}]`)}</span>
               <br>
