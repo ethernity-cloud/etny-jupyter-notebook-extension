@@ -1,6 +1,9 @@
 define(function (require, exports, module) {
     const ethers = require("https://cdnjs.cloudflare.com/ajax/libs/ethers/5.6.8/ethers.umd.min.js");
     const abi = require('./abi');
+    const crypto = require('./crypto');
+    require("https://cdn.jsdelivr.net/npm/abi-decoder@1.2.0/dist/abi-decoder.js");
+
 
     const etnyContractAddress = "0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";
     const IMAGE_HASH = "QmexKQm3wqeV63kR1G83ktCzodMAsdYRi4vV4RGhn1e1NT:etny-pynithy";
@@ -40,9 +43,9 @@ define(function (require, exports, module) {
         return accounts[0];
     }
 
-    const addDORequest = async (metadata1, metadata2, nodeAddress) => {
+    const addDORequest = async (imageMetadata = IMAGE_HASH, payloadMetadata, inputMetadata, nodeAddress) => {
         const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 60, instances = 1, maxPrice = 0;
-        return await etnyContract._addDORequest(cpu, memory, storage, bandwidth, duration, instances, maxPrice, IMAGE_HASH, metadata1, metadata2, nodeAddress);
+        return await etnyContract._addDORequest(cpu, memory, storage, bandwidth, duration, instances, maxPrice, imageMetadata, payloadMetadata, inputMetadata, nodeAddress);
     }
 
     const getOrdersCount = async () => {
@@ -64,13 +67,43 @@ define(function (require, exports, module) {
 
     const isNodeOperator = async (account) => {
         try {
-            const requests = await etnyContactWithProvider._getMyDPRequests({from: account});
+            const requests = await etnyContactWithProvider._getMyDPRequests({ from: account });
             return requests.length > 0;
         } catch (ex) {
             console.log(ex);
             return false;
         }
     }
+
+    const parseTransactionBytes = (bytesInput) => {
+        const parsedTransaction = ethers.utils.parseTransaction(bytesInput);
+        console.log(parsedTransaction);
+        window.abiDecoder.addABI(abi);
+        const decodedData = abiDecoder.decodeMethod(parsedTransaction.data);
+        const result = decodedData.params[1].value;
+        return {
+            from: parsedTransaction.from,
+            result: result
+        };
+        // const decodedInput = ethers.utils.defaultAbiCoder.decode(abi, bytesInput);
+        // const decodedInput = ethers.utils.defaultAbiCoder.decode(abi, bytesInput);
+        // return decodedInput;
+    }
+
+    const generateWallet = (clientChallenge, enclaveChallenge) => {
+        try {
+            const encoded = clientChallenge + enclaveChallenge;
+            console.log(encoded);
+            const hash = crypto.sha256_1(crypto.sha256_1(encoded, true), true);
+            console.log(`0x${hash}`);
+            const wallet = new ethers.Wallet(`${hash}`);
+            return wallet.address;
+        } catch (e) {
+            console.log(e);
+            return false;
+        }
+    }
+
     module.exports = {
         getContract,
         contractAddress: etnyContractAddress,
@@ -85,6 +118,8 @@ define(function (require, exports, module) {
         getOrder,
         approveOrder,
         getResultFromOrder,
+        parseTransactionBytes,
+        generateWallet,
         isNodeOperator
     };
 });

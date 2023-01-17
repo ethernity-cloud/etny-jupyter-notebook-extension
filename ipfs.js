@@ -1,6 +1,6 @@
 define(function (require, exports, module) {
     const ipfsHttpClient = require('https://unpkg.com/ipfs-http-client/dist/index.min.js');
-    const ipfsAddress = "http://ipfs.ethernity.cloud:5001";
+    const ipfsAddress = "https://ipfs.ethernity.cloud:5001";
     let ipfs = null;
 
     const initialize = () => {

@@ -16,9 +16,25 @@ define(function (require, exports, module) {
         return `${padL(dt.getDate())}/${padL(dt.getMonth() + 1)}/${dt.getFullYear()} ${padL(dt.getHours())}:${padL(dt.getMinutes())}:${padL(dt.getSeconds())}`;
     }
 
+    const generateRandomDigitsHexOfSize = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    const generateRandomHexOfSize = size => {
+        let result = '';
+        for (let i = 0; i < size; i++) {
+            const randomNumber = Math.floor(Math.random() * 16);
+            if (randomNumber < 10) {
+                result += randomNumber;
+            } else {
+                result += String.fromCharCode(randomNumber + 87);
+            }
+        }
+        return result;
+    };
+
     module.exports = {
         delay,
         formatDate,
-        getCurrentTime
+        getCurrentTime,
+        generateRandomDigitsHexOfSize,
+        generateRandomHexOfSize
     };
 });
