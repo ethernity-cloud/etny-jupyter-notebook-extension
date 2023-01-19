@@ -50,8 +50,7 @@ cd && git clone https://github.com/ethernity-cloud/etny-jupyter-notebook-extensi
 ```
 ### 8. Copy the cloned repo folder to the required path 
 ```
-cd && cp -R etny-jupyter-notebook-extension /home/{$your_username}/.local/lib/python3.10/site-packages/jupyter_contrib_nbextensions/nbextensions/
-*make sure to replace {$your_username} with your actual Linux username
+cd && cp -R etny-jupyter-notebook-extension $HOME/.local/lib/python3.10/site-packages/jupyter_contrib_nbextensions/nbextensions/
 ```
 ### 9. Activate the extension for the current user
 ```
