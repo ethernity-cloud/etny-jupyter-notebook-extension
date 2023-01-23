@@ -12,6 +12,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     let nodeAddressMetadata = '';
     let authorName, titleOfResearch, emailAddress = '';
 
+    let __orderNumber = -1;
     let __dohash = null;
     let __dorequest = 0;
     let __scriptHash = '';
@@ -24,6 +25,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const LAST_BLOCKS = 20;
 
+    const VERSION = 'v1';
     const ENCLAVE_IMAGE_IPFS_HASH = 'QmdyuRmvkgrQWQAESyGpkpbWJKtSEsSesRFodpvgfTHtzs';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
     const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmWoDZn181xdBPL85RW3qDeanLzgQz4L1AJ2ojjhqLJRGp';
@@ -35,6 +37,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         titleOfResearch = '';
         emailAddress = '';
 
+        __orderNumber = -1;
         __dohash = null;
         __dorequest = 0;
         __scriptHash = '';
@@ -112,15 +115,72 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     }
 
     const listenForAddDORequestEvent = async () => {
-        const event = async (_from, _doRequest) => {
+        let interval = null;
+        let intervalRepeats = 1;
+        const messageInterval = () => {
+            if (intervalRepeats % 2 === 0) {
+                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, "\\ Waiting for the task to be processed...");
+            } else {
+                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `/ Waiting for the task to be processed...`);
+            }
+            intervalRepeats++;
+        }
+        const _addDORequestEV = async (_from, _doRequest) => {
             const walletAddress = etnyContract.getCurrentWallet();
             if (_from.toLowerCase() === walletAddress.toLowerCase()) {
                 __dorequest = _doRequest.toNumber();
                 loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
-                etnyContract.getContract().off("_addDORequestEV", event);
+                etnyContract.getContract().off("_addDORequestEV", _addDORequestEV);
             }
         }
-        await etnyContract.getContract().on("_addDORequestEV", event);
+
+        const _orderPlacedEV = async (orderNumber, doRequestId, dpRequestId) => {
+            if (doRequestId.toNumber() === __dorequest) {
+                __orderNumber = orderNumber;
+                etnyContract.getContract().off("_orderPlacedEV", _orderPlacedEV);
+
+                // approve order in case we are not providing a node address as metadata4 parameter
+                if (!nodeAddressMetadata) {
+                    await approveOrder(orderNumber);
+                }
+
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order ${orderNumber} was placed and approved.`);
+
+                interval = setInterval(messageInterval, 1000);
+            }
+        }
+
+        const _orderClosedEV = async (orderNumber) => {
+            if (__orderNumber === orderNumber.toNumber()) {
+                clearInterval(interval);
+                // loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was processed and order number is ${orderNumber}.`);
+                etnyContract.getContract().off("_orderClosedEV", _orderClosedEV);
+
+                //get processed result from the order and create a certificate
+                const parsedOrderResult = await getResultFromOrder(orderNumber);
+                if (parsedOrderResult.success === false) {
+                    dialog.modal({
+                        title: "Ethernity Cloud",
+                        body: parsedOrderResult.message,
+                        buttons: {OK: {class: "btn-primary"}},
+                        notebook: Jupyter.notebook,
+                        keyboard_manager: Jupyter.keyboard_manager,
+                    });
+                    return;
+                }
+                const formattedCertificate = certificate.generateCertificateV1(parsedOrderResult);
+                await cells.insertCertificateCell(formattedCertificate);
+                const sha256FromCertificate = await certificate.generateSha256FromImage($);
+                const certificateData = await createBloxbergCertificate(parsedOrderResult, sha256FromCertificate);
+                if (certificateData) {
+                    await bloxbergAPI.generatePDFForCertificate(certificateData);
+                }
+            }
+        }
+
+        await etnyContract.getContract().off("_addDORequestEV", _addDORequestEV).on("_addDORequestEV", _addDORequestEV);
+        await etnyContract.getContract().off("_orderPlacedEV", _orderPlacedEV).on("_orderPlacedEV", _orderPlacedEV);
+        await etnyContract.getContract().off("_orderClosedEV", _orderClosedEV).on("_orderClosedEV", _orderClosedEV);
     }
 
     const callContractAddDORequest = async (imageMetadata, payloadMetadata, inputMetadata, nodeAddress) => {
@@ -153,51 +213,6 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was processed`);
     }
 
-    const waitUntilDoRequestIdIsValid = async () => {
-        if (__dorequest === 0) {
-            await utils.delay(1000);
-            await waitUntilDoRequestIdIsValid();
-        }
-    }
-
-    const findOrderId = async () => {
-        try {
-            loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `(${findOrderRepeats}) Waiting for the order to be placed and be taken into processing...`);
-            let orderId = -1;
-            const ordersCount = await etnyContract.getOrdersCount();
-            const count = ordersCount.toNumber();
-
-            await waitUntilDoRequestIdIsValid();
-
-            for (let i = count - 1, _pj_a = count - 5; i > _pj_a; i += -1) {
-                if (__dorequest !== 0) {
-                    const order = await etnyContract.getOrder(i);
-                    // console.log(order);
-                    // console.log(__dorequest);
-                    // console.log(order.doRequest.toNumber());
-                    if (order.doRequest.toNumber() === __dorequest && order.status.toNumber() === 2) {
-                        console.log(order.status.toNumber());
-                        orderId = i;
-                        break;
-                    }
-                }
-            }
-
-            if (orderId === -1) {
-                await utils.delay(2000);
-                findOrderRepeats = findOrderRepeats + 1;
-                return await findOrderId();
-            } else {
-                return orderId;
-            }
-        } catch (ex) {
-            console.error(ex.message);
-            await utils.delay(2000);
-            findOrderRepeats = findOrderRepeats + 1;
-            return await findOrderId();
-        }
-    }
-
     const approveOrder = async (orderId) => {
         const tx = await etnyContract.approveOrder(orderId);
         // console.log(tx);
@@ -212,12 +227,12 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const getResultFromOrder = async (orderId) => {
         // update the loading message to indicate the number of times the function has been repeated
-        loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `(${getResultFromOrderRepeats}) Waiting for the task to be processed...`);
+        // loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `(${getResultFromOrderRepeats}) Waiting for the task to be processed...`);
         try {
             // get the result of the order using the `etnyContract` object
             const orderResult = await etnyContract.getResultFromOrder(orderId);
             // update the loading message to indicate that the task has been successfully processed
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task successfully processed at ${utils.formatDate()}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task with order number ${orderId}  was successfully processed at ${utils.formatDate()}`);
 
             // parse the order result
             const parsedOrderResult = parseOrderResult(orderResult);
@@ -234,7 +249,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             console.log(wallet);
             // check if the generated wallet address matches the `transactionResult.from` address
             if (!wallet || wallet !== transactionResult.from) {
-                return { success: false, message: 'Integrity check failed, signer wallet address is wrong.' };
+                return {success: false, message: 'Integrity check failed, signer wallet address is wrong.'};
             }
 
             // get the result value from IPFS using the `parsedOrderResult.resultIPFSHash`
@@ -245,7 +260,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             const ipfsResultChecksum = crypto.sha256_1(ipfsResult);
             // check if the calculated checksum matches the `transactionResult.checksum`
             if (ipfsResultChecksum !== transactionResult.checksum) {
-                return { success: false, message: 'Integrity check failed, checksum of the order result is wrong.' };
+                return {success: false, message: 'Integrity check failed, checksum of the order result is wrong.'};
             }
 
             // get the original input transaction hash and the output transaction hash for the order
@@ -290,7 +305,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         } catch (ex) {
             if (ex.name === 'EtnyParseError') {
-                return { success: false, message: 'Ethernity Parsing Error' };
+                return {success: false, message: 'Ethernity Parsing Error'};
             }
             await utils.delay(5000);
             getResultFromOrderRepeats = getResultFromOrderRepeats + 1;
@@ -311,35 +326,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         // create new DO Request
         await createDORequest(imageMetadata, scriptMetadata);
 
-        // search for the above created order
-        const orderId = await findOrderId();
-
-        if (orderId === 0) return;
-
-        // approve order in case we are not providing a node address as metadata4 parameter
-        if (!nodeAddressMetadata) {
-            await approveOrder(orderId);
-        }
-
-        //get processed result from the order and create a certificate
-        const parsedOrderResult = await getResultFromOrder(orderId);
-        if (parsedOrderResult.success === false) {
-            dialog.modal({
-                title: "Ethernity Cloud",
-                body: parsedOrderResult.message,
-                buttons: { OK: { class: "btn-primary" } },
-                notebook: Jupyter.notebook,
-                keyboard_manager: Jupyter.keyboard_manager,
-            });
-            return;
-        }
-        const formattedCertificate = certificate.generateCertificate(parsedOrderResult);
-        await cells.insertCertificateCell(formattedCertificate);
-        const sha256FromCertificate = await certificate.generateSha256FromImage($);
-        const certificateData = await createBloxbergCertificate(parsedOrderResult, sha256FromCertificate);
-        if (certificateData) {
-            await bloxbergAPI.generatePDFForCertificate(certificateData);
-        }
+        // from here the logic is moved into Events
     }
 
     const connectToMetaMaskAndSign = async () => {
@@ -422,36 +409,36 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     .append(nodeAddressCheckbox)
                     .append($("<label style='font-weight: bold;'>Node Address</label>"))
                     .append(nodeAddress), buttons: {
-                        'Run on Ethernity Cloud': {
-                            class: "btn-primary", click: async function (e) {
-                                e.preventDefault();
-                                authorName = $('#authorName').val();
-                                titleOfResearch = $('#titleOfResearch').val();
-                                emailAddress = $('#emailAddress').val();
-                                challengeHash = $('#challengeInput').val();
+                    'Run on Ethernity Cloud': {
+                        class: "btn-primary", click: async function (e) {
+                            e.preventDefault();
+                            authorName = $('#authorName').val();
+                            titleOfResearch = $('#titleOfResearch').val();
+                            emailAddress = $('#emailAddress').val();
+                            challengeHash = $('#challengeInput').val();
 
-                                if ($('#runOnNodeCheckbox').is(':checked')) {
-                                    const nodeAddress = $('#nodeAddress').val();
-                                    if (etnyContract.isAddress(nodeAddress)) {
-                                        const isNode = await etnyContract.isNodeOperator(nodeAddress);
-                                        if (isNode) {
-                                            nodeAddressMetadata = nodeAddress;
-                                        } else {
-                                            alert('Introduced address is not a valid node operator address');
-                                            return false;
-                                        }
+                            if ($('#runOnNodeCheckbox').is(':checked')) {
+                                const nodeAddress = $('#nodeAddress').val();
+                                if (etnyContract.isAddress(nodeAddress)) {
+                                    const isNode = await etnyContract.isNodeOperator(nodeAddress);
+                                    if (isNode) {
+                                        nodeAddressMetadata = nodeAddress;
                                     } else {
-                                        alert('Introduced address is not a valid wallet address');
+                                        alert('Introduced address is not a valid node operator address');
                                         return false;
                                     }
                                 } else {
-                                    nodeAddressMetadata = '';
+                                    alert('Introduced address is not a valid wallet address');
+                                    return false;
                                 }
-
-                                await runOnEthernity();
+                            } else {
+                                nodeAddressMetadata = '';
                             }
+
+                            await runOnEthernity();
                         }
-                    }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
+                    }
+                }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
             });
 
             setTimeout(() => {
@@ -461,7 +448,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             dialog.modal({
                 title: "Ethernity Cloud",
                 body: "There was an error connecting to your wallet.",
-                buttons: { OK: { class: "btn-primary" } },
+                buttons: {OK: {class: "btn-primary"}},
                 notebook: Jupyter.notebook,
                 keyboard_manager: Jupyter.keyboard_manager,
             });
