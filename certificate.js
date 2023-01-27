@@ -32,7 +32,7 @@ define(function (require, exports, module) {
         const publicTimestampDate = new Date(certificate.publicTimestamp * 1000);
         const timestampDate = new Date(certificate.resultTimestamp * 1000);
         return `
-            <div style="font-family: monospace;font-size: 14px;color: #16a34a;">
+            <div style="font-family: monospace;font-size: 12px;color: #16a34a;">
               <span>${generateHash()}</span>
               <br>              
               <span>${generateTitle('ETHERNITY CLOUD CERTIFICATE')}</span>
