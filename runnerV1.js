@@ -136,7 +136,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         const _orderPlacedEV = async (orderNumber, doRequestId, dpRequestId) => {
             if (doRequestId.toNumber() === __dorequest) {
-                __orderNumber = orderNumber;
+                __orderNumber = orderNumber.toNumber();
                 etnyContract.getContract().off("_orderPlacedEV", _orderPlacedEV);
 
                 // approve order in case we are not providing a node address as metadata4 parameter
@@ -162,7 +162,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     dialog.modal({
                         title: "Ethernity Cloud",
                         body: parsedOrderResult.message,
-                        buttons: {OK: {class: "btn-primary"}},
+                        buttons: { OK: { class: "btn-primary" } },
                         notebook: Jupyter.notebook,
                         keyboard_manager: Jupyter.keyboard_manager,
                     });
@@ -249,7 +249,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             console.log(wallet);
             // check if the generated wallet address matches the `transactionResult.from` address
             if (!wallet || wallet !== transactionResult.from) {
-                return {success: false, message: 'Integrity check failed, signer wallet address is wrong.'};
+                return { success: false, message: 'Integrity check failed, signer wallet address is wrong.' };
             }
 
             // get the result value from IPFS using the `parsedOrderResult.resultIPFSHash`
@@ -260,7 +260,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             const ipfsResultChecksum = crypto.sha256_1(ipfsResult);
             // check if the calculated checksum matches the `transactionResult.checksum`
             if (ipfsResultChecksum !== transactionResult.checksum) {
-                return {success: false, message: 'Integrity check failed, checksum of the order result is wrong.'};
+                return { success: false, message: 'Integrity check failed, checksum of the order result is wrong.' };
             }
 
             // get the original input transaction hash and the output transaction hash for the order
@@ -305,7 +305,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         } catch (ex) {
             if (ex.name === 'EtnyParseError') {
-                return {success: false, message: 'Ethernity Parsing Error'};
+                return { success: false, message: 'Ethernity Parsing Error' };
             }
             await utils.delay(5000);
             getResultFromOrderRepeats = getResultFromOrderRepeats + 1;
@@ -409,36 +409,36 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     .append(nodeAddressCheckbox)
                     .append($("<label style='font-weight: bold;'>Node Address</label>"))
                     .append(nodeAddress), buttons: {
-                    'Run on Ethernity Cloud': {
-                        class: "btn-primary", click: async function (e) {
-                            e.preventDefault();
-                            authorName = $('#authorName').val();
-                            titleOfResearch = $('#titleOfResearch').val();
-                            emailAddress = $('#emailAddress').val();
-                            challengeHash = $('#challengeInput').val();
+                        'Run on Ethernity Cloud': {
+                            class: "btn-primary", click: async function (e) {
+                                e.preventDefault();
+                                authorName = $('#authorName').val();
+                                titleOfResearch = $('#titleOfResearch').val();
+                                emailAddress = $('#emailAddress').val();
+                                challengeHash = $('#challengeInput').val();
 
-                            if ($('#runOnNodeCheckbox').is(':checked')) {
-                                const nodeAddress = $('#nodeAddress').val();
-                                if (etnyContract.isAddress(nodeAddress)) {
-                                    const isNode = await etnyContract.isNodeOperator(nodeAddress);
-                                    if (isNode) {
-                                        nodeAddressMetadata = nodeAddress;
+                                if ($('#runOnNodeCheckbox').is(':checked')) {
+                                    const nodeAddress = $('#nodeAddress').val();
+                                    if (etnyContract.isAddress(nodeAddress)) {
+                                        const isNode = await etnyContract.isNodeOperator(nodeAddress);
+                                        if (isNode) {
+                                            nodeAddressMetadata = nodeAddress;
+                                        } else {
+                                            alert('Introduced address is not a valid node operator address');
+                                            return false;
+                                        }
                                     } else {
-                                        alert('Introduced address is not a valid node operator address');
+                                        alert('Introduced address is not a valid wallet address');
                                         return false;
                                     }
                                 } else {
-                                    alert('Introduced address is not a valid wallet address');
-                                    return false;
+                                    nodeAddressMetadata = '';
                                 }
-                            } else {
-                                nodeAddressMetadata = '';
-                            }
 
-                            await runOnEthernity();
+                                await runOnEthernity();
+                            }
                         }
-                    }
-                }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
+                    }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
             });
 
             setTimeout(() => {
@@ -448,7 +448,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             dialog.modal({
                 title: "Ethernity Cloud",
                 body: "There was an error connecting to your wallet.",
-                buttons: {OK: {class: "btn-primary"}},
+                buttons: { OK: { class: "btn-primary" } },
                 notebook: Jupyter.notebook,
                 keyboard_manager: Jupyter.keyboard_manager,
             });
