@@ -61,12 +61,23 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                 }
                 intervalRepeats++;
             }
+
             const _addDORequestEV = async (_from, _doRequest) => {
                 const walletAddress = etnyContract.getCurrentWallet();
-                if (_from.toLowerCase() === walletAddress.toLowerCase()) {
+                console.log('wallet address:', walletAddress);
+                if (walletAddress && _from.toLowerCase() === walletAddress.toLowerCase()) {
                     __dorequest = _doRequest.toNumber();
                     loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
                     etnyContract.getContract().off("_addDORequestEV", _addDORequestEV);
+                } else {
+                    dialog.modal({
+                        title: "Ethernity Cloud",
+                        body: "Unable to retrieve current wallet address.",
+                        buttons: { OK: { class: "btn-primary" } },
+                        notebook: Jupyter.notebook,
+                        keyboard_manager: Jupyter.keyboard_manager,
+                    });
+                    return;
                 }
             }
 
@@ -139,7 +150,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                 dialog.modal({
                     title: "Ethernity Cloud",
                     body: "There was an error creating DO Request.",
-                    buttons: {OK: {class: "btn-primary"}},
+                    buttons: { OK: { class: "btn-primary" } },
                     notebook: Jupyter.notebook,
                     keyboard_manager: Jupyter.keyboard_manager,
                 });
@@ -303,35 +314,35 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                         .append(nodeAddressCheckbox)
                         .append($("<label style='font-weight: bold;'>Node Address</label>"))
                         .append(nodeAddress), buttons: {
-                        'Run on Ethernity Cloud': {
-                            class: "btn-primary", click: async function (e) {
-                                e.preventDefault();
-                                authorName = $('#authorName').val();
-                                titleOfResearch = $('#titleOfResearch').val();
-                                emailAddress = $('#emailAddress').val();
+                            'Run on Ethernity Cloud': {
+                                class: "btn-primary", click: async function (e) {
+                                    e.preventDefault();
+                                    authorName = $('#authorName').val();
+                                    titleOfResearch = $('#titleOfResearch').val();
+                                    emailAddress = $('#emailAddress').val();
 
-                                if ($('#runOnNodeCheckbox').is(':checked')) {
-                                    const nodeAddress = $('#nodeAddress').val();
-                                    if (etnyContract.isAddress(nodeAddress)) {
-                                        const isNode = await etnyContract.isNodeOperator(nodeAddress);
-                                        if (isNode) {
-                                            nodeAddressMetadata = nodeAddress;
+                                    if ($('#runOnNodeCheckbox').is(':checked')) {
+                                        const nodeAddress = $('#nodeAddress').val();
+                                        if (etnyContract.isAddress(nodeAddress)) {
+                                            const isNode = await etnyContract.isNodeOperator(nodeAddress);
+                                            if (isNode) {
+                                                nodeAddressMetadata = nodeAddress;
+                                            } else {
+                                                alert('Introduced address is not a valid node operator address');
+                                                return false;
+                                            }
                                         } else {
-                                            alert('Introduced address is not a valid node operator address');
+                                            alert('Introduced address is not a valid wallet address');
                                             return false;
                                         }
                                     } else {
-                                        alert('Introduced address is not a valid wallet address');
-                                        return false;
+                                        nodeAddressMetadata = '';
                                     }
-                                } else {
-                                    nodeAddressMetadata = '';
-                                }
 
-                                await runOnEthernity();
+                                    await runOnEthernity();
+                                }
                             }
-                        }
-                    }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
+                        }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
                 });
 
                 setTimeout(() => {
@@ -341,7 +352,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                 dialog.modal({
                     title: "Ethernity Cloud",
                     body: "There was an error connecting to your wallet.",
-                    buttons: {OK: {class: "btn-primary"}},
+                    buttons: { OK: { class: "btn-primary" } },
                     notebook: Jupyter.notebook,
                     keyboard_manager: Jupyter.keyboard_manager,
                 });

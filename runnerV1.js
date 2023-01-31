@@ -125,12 +125,34 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             }
             intervalRepeats++;
         }
-        const _addDORequestEV = async (_from, _doRequest) => {
+
+        const _addDORequestEV = (_from, _doRequest) => {
             const walletAddress = etnyContract.getCurrentWallet();
-            if (_from.toLowerCase() === walletAddress.toLowerCase()) {
-                __dorequest = _doRequest.toNumber();
-                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
-                etnyContract.getContract().off("_addDORequestEV", _addDORequestEV);
+            console.log('wallet address:', walletAddress);
+            try {
+                if (walletAddress && _from.toLowerCase() === walletAddress.toLowerCase()) {
+                    __dorequest = _doRequest.toNumber();
+                    loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
+                    etnyContract.getContract().off("_addDORequestEV", _addDORequestEV);
+                } else {
+                    dialog.modal({
+                        title: "Ethernity Cloud",
+                        body: "Unable to retrieve current wallet address.",
+                        buttons: { OK: { class: "btn-primary" } },
+                        notebook: Jupyter.notebook,
+                        keyboard_manager: Jupyter.keyboard_manager,
+                    });
+                    return;
+                }
+            } catch (e) {
+                dialog.modal({
+                    title: "Ethernity Cloud",
+                    body: "Unable to retrieve current wallet address.",
+                    buttons: { OK: { class: "btn-primary" } },
+                    notebook: Jupyter.notebook,
+                    keyboard_manager: Jupyter.keyboard_manager,
+                });
+                return;
             }
         }
 
@@ -178,9 +200,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             }
         }
 
-        await etnyContract.getContract().off("_addDORequestEV", _addDORequestEV).on("_addDORequestEV", _addDORequestEV);
-        await etnyContract.getContract().off("_orderPlacedEV", _orderPlacedEV).on("_orderPlacedEV", _orderPlacedEV);
-        await etnyContract.getContract().off("_orderClosedEV", _orderClosedEV).on("_orderClosedEV", _orderClosedEV);
+        etnyContract.getContract().off("_addDORequestEV", _addDORequestEV).on("_addDORequestEV", _addDORequestEV);
+        etnyContract.getContract().off("_orderPlacedEV", _orderPlacedEV).on("_orderPlacedEV", (orderNumber, doRequestId, dpRequestId) => _orderPlacedEV(orderNumber, doRequestId, dpRequestId));
+        etnyContract.getContract().off("_orderClosedEV", _orderClosedEV).on("_orderClosedEV", (orderNumber) => _orderClosedEV(orderNumber));
     }
 
     const callContractAddDORequest = async (imageMetadata, payloadMetadata, inputMetadata, nodeAddress) => {

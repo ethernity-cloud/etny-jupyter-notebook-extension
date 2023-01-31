@@ -4,3 +4,4 @@ Link: README.md
 Description: Extension used to run task on Ethernity Network enclaves  
 Main: main.js
 Compatibility: 3.x, 4.x, 5.x, 6.x
+Version: 1.0.1

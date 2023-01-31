@@ -39,8 +39,13 @@ define(function (require, exports, module) {
     }
 
     const _getCurrentWallet = async () => {
-        const accounts = await provider.listAccounts();
-        return accounts[0];
+        try {
+            const accounts = await provider.listAccounts();
+            return accounts[0];
+        } catch (e) {
+            console.log(e);
+            return null;
+        }
     }
 
     const addDORequest = async (imageMetadata = IMAGE_HASH, payloadMetadata, inputMetadata, nodeAddress) => {
