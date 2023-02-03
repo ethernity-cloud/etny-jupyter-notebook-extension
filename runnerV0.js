@@ -15,9 +15,11 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         let __orderNumber = -1;
         let __dohash = null;
-        let __dorequest = 0;
+        let __dorequest = -1;
+        let __doRequestId = -1;
         let __scriptHash = '';
         let __fileSetHash = '';
+
         let loadingCell = null;
         let loadingText = '';
         let findOrderRepeats = 1;
@@ -40,7 +42,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
             __orderNumber = -1;
             __dohash = null;
-            __dorequest = 0;
+            __doRequestId = -1;
+            __dorequest = -1;
             __scriptHash = '';
             __fileSetHash = '';
 
@@ -53,6 +56,11 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const listenForAddDORequestEvent = async () => {
             let interval = null;
             let intervalRepeats = 1;
+            let _addDORequestEVPassed = false;
+            let _orderPlacedEVPassed = false;
+            let _orderClosedEVPassed = false;
+
+            const contract = etnyContract.getContract();
             const messageInterval = () => {
                 if (intervalRepeats % 2 === 0) {
                     loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, "\\ Waiting for the task to be processed...");
@@ -62,62 +70,109 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                 intervalRepeats++;
             }
 
+            const _orderApproved = async () => {
+                _orderPlacedEVPassed = true;
+                contract.off("_orderPlacedEV", _orderPlacedEV);
+                // console.log("total subscribed events:", contract.listenerCount());
+
+                // approve order in case we are not providing a node address as metadata4 parameter
+                if (!nodeAddressMetadata) {
+                    await approveOrder(__orderNumber);
+                }
+
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order ${__orderNumber} was placed and approved.`);
+                interval = setInterval(messageInterval, 1000);
+            }
+
             const _addDORequestEV = async (_from, _doRequest) => {
-                const walletAddress = etnyContract.getCurrentWallet();
-                console.log('wallet address:', walletAddress);
-                if (walletAddress && _from.toLowerCase() === walletAddress.toLowerCase()) {
-                    __dorequest = _doRequest.toNumber();
-                    loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
-                    etnyContract.getContract().off("_addDORequestEV", _addDORequestEV);
-                } else {
+                const walletAddress = (await etnyContract.getProvider().send("eth_requestAccounts", []))[0];
+                // console.log('wallet address:', walletAddress);
+                try {
+                    if (walletAddress && _from.toLowerCase() === walletAddress.toLowerCase() && !_addDORequestEVPassed) {
+                        __dorequest = _doRequest.toNumber();
+                        loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was picked up and DO Request ${__dorequest} was created.`);
+                        _addDORequestEVPassed = true;
+                        contract.off("_addDORequestEV", _addDORequestEV);
+                        // console.log("total subscribed events:", contract.listenerCount());
+
+                        // in case _orderPlacedEV was dispatched before _addDORequestEV we have to call the _orderApproved
+                        if (__orderNumber !== -1 && __dorequest === __doRequestId) {
+                            await _orderApproved();
+                        }
+                    } else {
+                        if (!walletAddress) {
+                            dialog.modal({
+                                title: "Ethernity Cloud",
+                                body: "Unable to retrieve current wallet address.",
+                                buttons: {OK: {class: "btn-primary"}},
+                                notebook: Jupyter.notebook,
+                                keyboard_manager: Jupyter.keyboard_manager,
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.log(e);
                     dialog.modal({
                         title: "Ethernity Cloud",
                         body: "Unable to retrieve current wallet address.",
-                        buttons: { OK: { class: "btn-primary" } },
+                        buttons: {OK: {class: "btn-primary"}},
                         notebook: Jupyter.notebook,
                         keyboard_manager: Jupyter.keyboard_manager,
                     });
-                    return;
                 }
             }
 
             const _orderPlacedEV = async (orderNumber, doRequestId, dpRequestId) => {
-                if (doRequestId.toNumber() === __dorequest) {
+                // console.log(`Task was approved.`)
+                // this means that addDPRequestEV was dispatched
+                if (doRequestId.toNumber() === __dorequest && !_orderPlacedEVPassed && __dorequest !== -1) {
                     __orderNumber = orderNumber.toNumber();
-                    etnyContract.getContract().off("_orderPlacedEV", _orderPlacedEV);
-
-                    // approve order in case we are not providing a node address as metadata4 parameter
-                    if (!nodeAddressMetadata) {
-                        await approveOrder(orderNumber);
+                    __doRequestId = doRequestId.toNumber();
+                    await _orderApproved();
+                } else {
+                    // otherwise keep track of the result of this event and call the function _orderApproved in addDPRequestEV
+                    if (__dorequest === -1) {
+                        __orderNumber = orderNumber.toNumber();
+                        __doRequestId = doRequestId.toNumber();
                     }
-
-                    loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order ${orderNumber} was placed and approved.`);
-
-                    interval = setInterval(messageInterval, 1000);
                 }
             }
 
             const _orderClosedEV = async (orderNumber) => {
-                if (__orderNumber === orderNumber.toNumber()) {
+                // console.log(`Checking if task has finished processing.`);
+                if (__orderNumber === orderNumber.toNumber() && !_orderClosedEVPassed && __orderNumber !== -1) {
                     clearInterval(interval);
-                    // loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Task was processed and order number is ${orderNumber}.`);
-                    etnyContract.getContract().off("_orderClosedEV", _orderClosedEV);
+                    _orderClosedEVPassed = true;
+                    contract.off("_orderClosedEV", _orderClosedEV);
+                    // console.log("total subscribed events:", contract.listenerCount());
 
                     //get processed result from the order and create a certificate
-                    const certificateObject = await getResultFromOrder(orderNumber);
-                    const formattedCertificate = certificate.generateCertificate(certificateObject);
+                    const parsedOrderResult = await getResultFromOrder(orderNumber);
+                    if (parsedOrderResult.success === false) {
+                        dialog.modal({
+                            title: "Ethernity Cloud",
+                            body: parsedOrderResult.message,
+                            buttons: {OK: {class: "btn-primary"}},
+                            notebook: Jupyter.notebook,
+                            keyboard_manager: Jupyter.keyboard_manager,
+                        });
+                        return;
+                    }
+                    const formattedCertificate = certificate.generateCertificateV1(parsedOrderResult);
                     await cells.insertCertificateCell(formattedCertificate);
                     const sha256FromCertificate = await certificate.generateSha256FromImage($);
-                    const certificateData = await createBloxbergCertificate(certificateObject, sha256FromCertificate);
+                    const certificateData = await createBloxbergCertificate(parsedOrderResult, sha256FromCertificate);
                     if (certificateData) {
                         await bloxbergAPI.generatePDFForCertificate(certificateData);
                     }
                 }
             }
 
-            await etnyContract.getContract().off("_addDORequestEV", _addDORequestEV).on("_addDORequestEV", _addDORequestEV);
-            await etnyContract.getContract().off("_orderPlacedEV", _orderPlacedEV).on("_orderPlacedEV", _orderPlacedEV);
-            await etnyContract.getContract().off("_orderClosedEV", _orderClosedEV).on("_orderClosedEV", _orderClosedEV);
+            contract.on("_addDORequestEV", _addDORequestEV);
+            contract.on("_orderPlacedEV", _orderPlacedEV);
+            contract.on("_orderClosedEV", _orderClosedEV);
+
+            // console.log("total subscribed events:", contract.listenerCount());
         }
 
         const callContractAddDORequest = async (imageMetadata, payloadMetadata, inputMetadata, nodeAddress) => {
@@ -242,7 +297,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const connectToMetaMaskAndSign = async () => {
             try {
                 await etnyContract.getProvider().send("eth_requestAccounts", []);
-                return true;
+                await initialize();
+                const walletAddress = etnyContract.getCurrentWallet();
+                return walletAddress !== null && walletAddress !== undefined;
             } catch (e) {
                 return false;
             }
@@ -259,14 +316,15 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
         const cleanup = async () => {
             reset();
-
             await cells.deleteLastCells();
+            const contract = etnyContract.getContract();
+            contract.removeAllListeners();
         }
 
         const runOnEthernityHandler = async () => {
             await initialize();
-
             await cleanup();
+
             loadingCell = await cells.insertLoadingCell(loadingText);
             loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Starting running task...');
 

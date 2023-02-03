@@ -72,7 +72,7 @@ define(function (require, exports, module) {
 
     const isNodeOperator = async (account) => {
         try {
-            const requests = await etnyContactWithProvider._getMyDPRequests({ from: account });
+            const requests = await etnyContactWithProvider._getMyDPRequests({from: account});
             return requests.length > 0;
         } catch (ex) {
             console.log(ex);
@@ -90,9 +90,6 @@ define(function (require, exports, module) {
             from: parsedTransaction.from,
             result: result
         };
-        // const decodedInput = ethers.utils.defaultAbiCoder.decode(abi, bytesInput);
-        // const decodedInput = ethers.utils.defaultAbiCoder.decode(abi, bytesInput);
-        // return decodedInput;
     }
 
     const generateWallet = (clientChallenge, enclaveChallenge) => {
