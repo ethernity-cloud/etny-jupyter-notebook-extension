@@ -82,7 +82,7 @@ define(function (require, exports, module) {
         const cipherTextPrivateKey = generateRandomBytes(32);
         const sharedEccKey = publicKey.getPublic().mul(cipherTextPrivateKey);
         const secretKey = await ecc_point_to_256_bit_key(sharedEccKey);
-        console.log(secretKey.toString('hex'));
+        // console.log(secretKey.toString('hex'));
         const encrypted = encryptMsg(msg, secretKey);
         const cipherTextPublicKey = curve.g.mul(cipherTextPrivateKey);
         return {
@@ -103,10 +103,10 @@ define(function (require, exports, module) {
             authTag: encryptedMessage.authTag,
             ciphertextPubKey: encryptedMessage.cipherTextPublicKey
         };
-        console.log('encrypted msg:', encryptedMessageObject);
+        // console.log('encrypted msg:', encryptedMessageObject);
 
         const base64Encrypted = encryptedDataToBase64Json(encryptedMessage);
-        console.log(base64Encrypted);
+        // console.log(base64Encrypted);
         return base64Encrypted;
     }
 
@@ -114,13 +114,13 @@ define(function (require, exports, module) {
         const c = new X509();
         c.readCertPEM(certPem);
         const pubKey = c.getPublicKey().pubKeyHex;
-        console.log(pubKey);
+        // console.log(pubKey);
         return pubKey;
     }
 
     const execute = async (message) => {
         const pubKey = loadCertificate();
-        console.log(message);
+        // console.log(message);
         return await encrypt(pubKey, message);
     }
 
