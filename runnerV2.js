@@ -30,7 +30,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const VERSION = 'v2';
     const ENCLAVE_IMAGE_IPFS_HASH = 'QmXL9KCBe1Qw2XuirezKiXpxF28Sk9Z9mk41eJJN5iPd9C';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmcXzvAFLRkvN8DK9AcapwkZXgpRQDdeUnLANb9p5rwG3F';
+    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmVa714DcU2S1JqGLwLdMYH9PxJbpbD4JvEeuH6LnY8crx';
     const FILESET_HASH = 'v2::0';
 
     const certPem = `-----BEGIN CERTIFICATE-----
