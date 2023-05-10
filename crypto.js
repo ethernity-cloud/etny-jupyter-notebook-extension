@@ -5,16 +5,6 @@ define(function (require, exports, module) {
     const js_sha256 = require('https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js');
 
     const curve = new elliptic.ec('p384');
-    const certPem = `-----BEGIN CERTIFICATE-----
-        MIIBdDCB+6ADAgECAgkAk7lTTBumyLowCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
-        Q0FfQ0VSVDAgFw0yMzAxMTExNjM1NDRaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
-        A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASUYAQ8ep17
-        baZp+ScHpr48q/ijwsgPs/JlXEWFoHd0UTZaqurcs09NtNzfASASMyTBBNH+pEek
-        kFBDitgLk8CmpVdGZ102IlCt1ZgVhygp12NEkHd1CNzdm+GYVjFSyHKjFzAVMBMG
-        A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQDJ1h3DNllIi5u1
-        Dc5voeCsTt2MPFk9iTCwGyKIrp/lrZPS3NgbJ53EPWO+71DgU4UCMHkffuV3+LHr
-        X3dMoLpSb+NwpWVk+wb+agK3aRQQJb72pt+LFUOAnkq7DoQEB8rBjg==
-        -----END CERTIFICATE-----`;
 
     const sha256 = async (value) => {
         const buffer = new TextEncoder().encode(value);
@@ -110,16 +100,16 @@ define(function (require, exports, module) {
         return base64Encrypted;
     }
 
-    const loadCertificate = () => {
+    const loadCertificate = (certificate) => {
         const c = new X509();
-        c.readCertPEM(certPem);
+        c.readCertPEM(certificate);
         const pubKey = c.getPublicKey().pubKeyHex;
         // console.log(pubKey);
         return pubKey;
     }
 
-    const execute = async (message) => {
-        const pubKey = loadCertificate();
+    const execute = async (message, certificate) => {
+        const pubKey = loadCertificate(certificate);
         // console.log(message);
         return await encrypt(pubKey, message);
     }

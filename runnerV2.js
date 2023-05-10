@@ -1,10 +1,10 @@
 /**
- * main.js
- * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network
+ * runnerV2.js
+ * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network with version 2.0 of node
  *
- * @version 0.2.0
+ * @version 0.3.0
  * @author  Ciprian Florea, ciprian@ethernity.cloud
- * @updated 2023-01-09
+ * @updated 2023-04-19
  *
  *
  */
@@ -26,22 +26,23 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const LAST_BLOCKS = 20;
 
-    const VERSION = 'v1';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmdyuRmvkgrQWQAESyGpkpbWJKtSEsSesRFodpvgfTHtzs';
+    console.log('hey');
+    const VERSION = 'v2';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmcHBp4AyEtWSHjUiKDGoWFxCLz9F2SAUqzFsKVe12Lb1W';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmWoDZn181xdBPL85RW3qDeanLzgQz4L1AJ2ojjhqLJRGp';
-    const FILESET_HASH = 'v1::0';
+    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmcXzvAFLRkvN8DK9AcapwkZXgpRQDdeUnLANb9p5rwG3F';
+    const FILESET_HASH = 'v2::0';
 
     const certPem = `-----BEGIN CERTIFICATE-----
-        MIIBdDCB+6ADAgECAgkAk7lTTBumyLowCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
-        Q0FfQ0VSVDAgFw0yMzAxMTExNjM1NDRaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
-        A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASUYAQ8ep17
-        baZp+ScHpr48q/ijwsgPs/JlXEWFoHd0UTZaqurcs09NtNzfASASMyTBBNH+pEek
-        kFBDitgLk8CmpVdGZ102IlCt1ZgVhygp12NEkHd1CNzdm+GYVjFSyHKjFzAVMBMG
-        A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQDJ1h3DNllIi5u1
-        Dc5voeCsTt2MPFk9iTCwGyKIrp/lrZPS3NgbJ53EPWO+71DgU4UCMHkffuV3+LHr
-        X3dMoLpSb+NwpWVk+wb+agK3aRQQJb72pt+LFUOAnkq7DoQEB8rBjg==
-        -----END CERTIFICATE-----`;
+    MIIBczCB+6ADAgECAgkAsVQgwEP6MBcwCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
+    Q0FfQ0VSVDAgFw0yMzA0MjQwODA4MDRaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
+    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASYmLEZJpT6
+    62GHYvdBULw62YpJVfnchrOP5AbwGQNOOhOt+aCR11z0SE6sR81tgozXZocKB86R
+    EFi5WR1rbH6rCLXdw5aQyHpnqZXrPBcqj/E1N4m43ExGSIQciQ7WSMyjFzAVMBMG
+    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2cAMGQCMFdmKqVr/l4iUe2N
+    n+9dtI1KaoqV72JpKxexDnVe8o5uD/6TdoJBWv73qcT4B42PZgIwBAubWM6vLdzC
+    f/w/9+zI7jNTee18A+91m0KAC2qMqu5BR7frxZPTaTuqdxtsioN4
+    -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
         0: "SUCCESS",
@@ -183,7 +184,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     });
                     return;
                 }
-                const formattedCertificate = certificate.generateCertificateV1(parsedOrderResult);
+                const formattedCertificate = certificate.generateCertificateV2(parsedOrderResult);
                 await cells.insertCertificateCell(formattedCertificate);
                 const sha256FromCertificate = await certificate.generateSha256FromImage($);
                 const certificateData = await createBloxbergCertificate(parsedOrderResult, sha256FromCertificate);
@@ -200,25 +201,25 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         // console.log("total subscribed events:", contract.listenerCount());
     }
 
-    const getV1ImageMetadata = async (challengeHash) => {
+    const getV2ImageMetadata = async (challengeHash) => {
         //generating encrypted base64 hash of the challenge
         const base64EncryptedChallenge = await crypto.encryptChallenge(challengeHash, certPem);
 
         // uploading to IPFS the base64 encrypted challenge
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
 
-        // image metadata for v1 format v1:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
-        return `v1:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}`;
+        // image metadata for v2 format v2:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
+        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}`;
     }
 
-    const getV1InputMetadata = async () => {
+    const getV2InputMetadata = async () => {
         // extracting code from all the code cells
         const code = cells.extractPythonCode();
         const scriptChecksum = crypto.sha256_1(code);
         // uploading all python code to IPFS and received hash of transaction
         __scriptHash = await ipfs.uploadToIPFS(code);
 
-        return `v1:${__scriptHash}:${scriptChecksum}`
+        return `v2:${__scriptHash}:${scriptChecksum}`
     }
 
     const parseOrderResult = (result) => {
@@ -264,7 +265,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const createDORequest = async (imageMetadata, scriptHash) => {
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Submitting transaction for DO request on ${utils.formatDate()}`);
         // add here call to SC(smart contract)
-        const scriptMetadata = await getV1InputMetadata();
+        const scriptMetadata = await getV2InputMetadata();
         // console.log(imageMetadata);
         // console.log(scriptHash);
         const tx = await callContractAddDORequest(imageMetadata, scriptHash, scriptMetadata, nodeAddressMetadata);
@@ -385,10 +386,10 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         await listenForAddDORequestEvent();
 
         // getting image metadata
-        const imageMetadata = await getV1ImageMetadata(challengeHash);
+        const imageMetadata = await getV2ImageMetadata(challengeHash);
 
         // getting script metadata
-        const scriptMetadata = await getV1InputMetadata();
+        const scriptMetadata = await getV2InputMetadata();
 
         // create new DO Request
         await createDORequest(imageMetadata, scriptMetadata);
@@ -459,7 +460,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             };
 
             dialog.modal({
-                title: "Ethernity Cloud Runner v1", body: $("<div></div>")
+                title: "Ethernity Cloud Runner v2", body: $("<div></div>")
                     .append("Every field is optional, it is only to enhance the generated certificate at the end of the process.")
                     .append($("<br/><br/>"))
                     .append($("<label style='font-weight: bold;'>Author or Group Name</label>"))

@@ -68,3 +68,6 @@ We have to type our code which needs to be executed on the Ethernity Cloud ecosy
 
 ## Demo
 A video on how it works will be made available soon
+
+jupyter nbextension install ./etny-jupyter-notebook-extension
+jupyter nbextension enable etny-jupyter-notebook-extension/main
