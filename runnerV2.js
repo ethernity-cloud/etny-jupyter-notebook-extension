@@ -34,6 +34,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const FILESET_HASH = 'v2::0';
 
     const certPem = `-----BEGIN CERTIFICATE-----
+    MIIBczCB+qADAgECAghgTonnrqXWRDAKBggqhkjOPQQDAzASMRAwDgYDVQQDDAdD
     QV9DRVJUMCAXDTIzMDUxMTA5MTgyNloYDzQwOTYwMTAxMDAwMDAwWjAWMRQwEgYD
     VQQDDAtTRVJWRVJfQ0VSVDB2MBAGByqGSM49AgEGBSuBBAAiA2IABIwh8xEDk+MG
     vRMW2L4yiEe2eJcHeH1nXHPBk9i/2GtXJXndCbgiWHc+XLD9iSEQvzdtRVAHILxn
