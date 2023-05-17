@@ -1,4 +1,3 @@
-const ecies = require("eciesjs");
 define(function (require, exports, module) {
     const forge = require('https://cdn.jsdelivr.net/npm/node-forge@1.0.0/dist/forge.min.js');
     const jsrsasign = require('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/8.0.20/jsrsasign-all-min.js');
