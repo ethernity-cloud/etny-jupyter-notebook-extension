@@ -56,7 +56,6 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     }
 
     let tempWallet;
-    console.log('tempWallet:', tempWallet.getPublicKey())
     const reset = () => {
         nodeAddressMetadata = '';
         authorName = '';
@@ -80,6 +79,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         ipfs.initialize();
         await etnyContract.initContract();
         tempWallet = tempWallet || etnyContract.createRandomWallet();
+        console.log('tempWallet:', tempWallet.getPublicKey())
     }
 
     const listenForAddDORequestEvent = async () => {
