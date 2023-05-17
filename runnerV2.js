@@ -55,7 +55,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         7: "INPUT_CHECKSUM_ERROR"
     }
 
-    const tempWallet = etnyContract.createRandomWallet();
+    let tempWallet;
     console.log('tempWallet:', tempWallet.getPublicKey())
     const reset = () => {
         nodeAddressMetadata = '';
@@ -78,7 +78,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const initialize = async () => {
         ipfs.initialize();
-        return await etnyContract.initContract();
+        await etnyContract.initContract();
+        tempWallet = tempWallet || etnyContract.createRandomWallet();
     }
 
     const listenForAddDORequestEvent = async () => {
