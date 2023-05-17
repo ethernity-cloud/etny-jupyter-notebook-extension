@@ -28,20 +28,20 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     console.log('hey');
     const VERSION = 'v2';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmRz9qvQnedG1JhF9a74itqf17ZKc5DhtKAMwoM5qmdYYj';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmPu68UDzJsZiycEMY1tTkPbn2VPxBkFBAoMtfN5BYBaA1';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
     const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'Qmc5vLxRq7rRhMUxQeFN2BD6WF8SUmTkM1Rg34SotmFWox';
     const FILESET_HASH = 'v2::0';
 
     const certPem = `-----BEGIN CERTIFICATE-----
-    MIIBczCB+qADAgECAggA3OeL0zJgCjAKBggqhkjOPQQDAzASMRAwDgYDVQQDDAdD
-    QV9DRVJUMCAXDTIzMDUxNzAwMDg1NFoYDzQwOTYwMTAxMDAwMDAwWjAWMRQwEgYD
-    VQQDDAtTRVJWRVJfQ0VSVDB2MBAGByqGSM49AgEGBSuBBAAiA2IABMhSYK2OuQfD
-    NvhYZt9BMAjwA7xplkGRaFzOgTll5MW//+bwGMIeXTX0ANtV8RuVu4Sp3CEqJlv+
-    y3MRu8l/3Zcn+PsNmLpT0OH7f5qDOu/tY+GesxEWbQ8ZAeLnTdUJKqMXMBUwEwYD
-    VR0lBAwwCgYIKwYBBQUHAwEwCgYIKoZIzj0EAwMDaAAwZQIxAPCm5FRx2cohY1DL
-    nii4Tdo/oOV8CuOLhFIsyozlklZnvtfBONIdfcri6V6v0f/SEAIwD1H0qtzcGqx7
-    cdJGeNly9IAj3o4pVZkM/t13GNbuVFI0s79z+vZqv7tkiPD67fAl
+    MIIBdTCB+6ADAgECAgkAljBZ2pPHeQEwCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
+    Q0FfQ0VSVDAgFw0yMzA1MTcwMjAxMDhaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
+    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAARbd+tqY+VD
+    JV8bDxuHJZAYxIVc0JF+cCd9NBDe1l9mRKb8tldLeuIxt6SZOABFiug6Oa64niqI
+    9PkfUo1Mkd7YN9EgoTZz4vvYpNoIDjA1raW3ZkpHlFMMQJZAwtujnMWjFzAVMBMG
+    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2kAMGYCMQCnrQ+YOTZY2WWm
+    BzTjlrFJBapCduARzKtzBWpSO4GyvX3FEJiwOIdEHBvuE/SPBpQCMQCPx4Ub47Fa
+    PXnbTRi7Y4fKIA2IoQo/bAKJsJDXtqb07le+zwh2Yv1D1RIuvX3JGH0=
     -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
@@ -325,10 +325,12 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
             // get the result value from IPFS using the `parsedOrderResult.resultIPFSHash`
             const ipfsResult = await ipfs.getFromIPFS(parsedOrderResult.resultIPFSHash);
+            // decrypt data
+            const decryptedData = crypto.decrypt(ipfsResult, tempWallet.privateKey);
             // update the loading message to show the result value
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${ipfsResult}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${decryptedData}`);
             // calculate the SHA-256 checksum of the result value
-            const ipfsResultChecksum = crypto.sha256_1(ipfsResult);
+            const ipfsResultChecksum = crypto.sha256_1(decryptedData);
             // check if the calculated checksum matches the `transactionResult.checksum`
             if (ipfsResultChecksum !== transactionResult.checksum) {
                 return {success: false, message: 'Integrity check failed, checksum of the order result is wrong.'};

@@ -1,8 +1,10 @@
+const ecies = require("eciesjs");
 define(function (require, exports, module) {
     const forge = require('https://cdn.jsdelivr.net/npm/node-forge@1.0.0/dist/forge.min.js');
     const jsrsasign = require('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/8.0.20/jsrsasign-all-min.js');
     const elliptic = require('https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js');
     const js_sha256 = require('https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js');
+    const ecies = require('https://cdn.jsdelivr.net/npm/eciesjs@0.3.16/dist/index.min.js');
 
     const curve = new elliptic.ec('p384');
 
@@ -15,7 +17,7 @@ define(function (require, exports, module) {
     const sha256_1 = (value, asHex = false) => {
         const buffer = new TextEncoder().encode(value);
         const sha = js_sha256.sha256(buffer);
-        if (asHex){
+        if (asHex) {
             return sha.toString('hex');
         }
         return sha.toString();
@@ -114,9 +116,19 @@ define(function (require, exports, module) {
         return await encrypt(pubKey, message);
     }
 
+    const decryptWithPrivateKey = (encryptedData, privateKey) => {
+        const pk = ecies.PrivateKey.fromHex(
+            privateKey.replace('0x', '')
+        );
+
+        const decryptedData = ecies.decrypt(pk.toHex(), ecies.utils.decodeHex(encryptedData)).toString()
+
+        return decryptedData;
+    }
     module.exports = {
         encryptChallenge: execute,
         sha256,
-        sha256_1
+        sha256_1,
+        decrypt: decryptWithPrivateKey
     };
 });
