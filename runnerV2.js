@@ -28,20 +28,20 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     console.log('hey');
     const VERSION = 'v2';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmVnFxJcdZ4fAt5jd4Mh6gAFkq2soKm3EiSvP445PPVVhu';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmRz9qvQnedG1JhF9a74itqf17ZKc5DhtKAMwoM5qmdYYj';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmVa714DcU2S1JqGLwLdMYH9PxJbpbD4JvEeuH6LnY8crx';
+    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmNq9FVvTiqSAQvZAPbNTBbZDimvHEDqwsJMwpR8FRZbXB ';
     const FILESET_HASH = 'v2::0';
 
     const certPem = `-----BEGIN CERTIFICATE-----
-    MIIBdDCB+6ADAgECAgkAob5epA4wzu4wCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
-    Q0FfQ0VSVDAgFw0yMzA1MTExODI5NDdaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
-    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAT9ZegwRAKj
-    VYIsRzTZtqN2V/2khqClWqg9VeUoVnM9GHFUDtKIHDaq8i0IWUhb1CA/p2qZiKS5
-    Giqc+NiwRh/2Vg0ak8D7XAm4JtT3dB35aZbXckHZ1bA+Znwle5J3qlCjFzAVMBMG
-    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMBAaf2p8jZOaLOa8
-    acE2Dkx0y8QgP8eC8CrS1BlzFrfZLoYl5T60ytSsxRdNjcRnKQIxAOOHTuKPTnnq
-    E+RGk+W3lCAVtsSegheMch75ZZWpDjs8e3uzKR60N4bYBJNOkt9GRQ==
+    MIIBczCB+qADAgECAggA3OeL0zJgCjAKBggqhkjOPQQDAzASMRAwDgYDVQQDDAdD
+    QV9DRVJUMCAXDTIzMDUxNzAwMDg1NFoYDzQwOTYwMTAxMDAwMDAwWjAWMRQwEgYD
+    VQQDDAtTRVJWRVJfQ0VSVDB2MBAGByqGSM49AgEGBSuBBAAiA2IABMhSYK2OuQfD
+    NvhYZt9BMAjwA7xplkGRaFzOgTll5MW//+bwGMIeXTX0ANtV8RuVu4Sp3CEqJlv+
+    y3MRu8l/3Zcn+PsNmLpT0OH7f5qDOu/tY+GesxEWbQ8ZAeLnTdUJKqMXMBUwEwYD
+    VR0lBAwwCgYIKwYBBQUHAwEwCgYIKoZIzj0EAwMDaAAwZQIxAPCm5FRx2cohY1DL
+    nii4Tdo/oOV8CuOLhFIsyozlklZnvtfBONIdfcri6V6v0f/SEAIwD1H0qtzcGqx7
+    cdJGeNly9IAj3o4pVZkM/t13GNbuVFI0s79z+vZqv7tkiPD67fAl
     -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
@@ -55,6 +55,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         7: "INPUT_CHECKSUM_ERROR"
     }
 
+    const tempWallet = ethers.Wallet.createRandom();
+    console.log('tempWallet:', tempWallet.getPublicKey())
     const reset = () => {
         nodeAddressMetadata = '';
         authorName = '';
@@ -209,7 +211,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
 
         // image metadata for v2 format v2:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
-        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}`;
+        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${tempWallet.getPublicKey()}`;
     }
 
     const getV2InputMetadata = async () => {
