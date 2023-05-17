@@ -212,7 +212,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
 
         // image metadata for v2 format v2:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
-        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${tempWallet.getPublicKey()}`;
+        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${tempWallet.publicKey}`;
     }
 
     const getV2InputMetadata = async () => {
