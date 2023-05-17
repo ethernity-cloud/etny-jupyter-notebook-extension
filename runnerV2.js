@@ -79,7 +79,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         ipfs.initialize();
         await etnyContract.initContract();
         tempWallet = tempWallet || etnyContract.createRandomWallet();
-        console.log('tempWallet:', tempWallet.getPublicKey())
+        console.log('tempWallet:', tempWallet.publicKey);
     }
 
     const listenForAddDORequestEvent = async () => {
