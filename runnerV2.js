@@ -8,7 +8,7 @@
  *
  *
  */
-define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './crypto', './utils', 'ethers'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, crypto, utils, ethers) {
+define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './crypto', './utils'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, crypto, utils) {
     let nodeAddressMetadata = '';
     let authorName, titleOfResearch, emailAddress = '';
 
@@ -55,7 +55,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         7: "INPUT_CHECKSUM_ERROR"
     }
 
-    const tempWallet = ethers.Wallet.createRandom();
+    const tempWallet = etnyContract.createRandomWallet();
     console.log('tempWallet:', tempWallet.getPublicKey())
     const reset = () => {
         nodeAddressMetadata = '';
