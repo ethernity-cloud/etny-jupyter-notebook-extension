@@ -3,7 +3,10 @@ define(function (require, exports, module) {
     const jsrsasign = require('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/8.0.20/jsrsasign-all-min.js');
     const elliptic = require('https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js');
     const js_sha256 = require('https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js');
-    const ecies = require('https://cdn.jsdelivr.net/npm/eciesjs@0.3.16/dist/index.min.js');
+
+    const eciesScript = document.createElement('script');
+    eciesScript.setAttribute('src', 'https://cdn.jsdelivr.net/npm/eciesjs@0.3.16/dist/index.min.js');
+    document.head.appendChild(eciesScript);
 
     const curve = new elliptic.ec('p384');
 
@@ -116,11 +119,11 @@ define(function (require, exports, module) {
     }
 
     const decryptWithPrivateKey = (encryptedData, privateKey) => {
-        const pk = ecies.PrivateKey.fromHex(
+        const pk = window.ecies.PrivateKey.fromHex(
             privateKey.replace('0x', '')
         );
 
-        const decryptedData = ecies.decrypt(pk.toHex(), ecies.utils.decodeHex(encryptedData)).toString()
+        const decryptedData = window.ecies.decrypt(pk.toHex(), window.ecies.utils.decodeHex(encryptedData)).toString()
 
         return decryptedData;
     }
