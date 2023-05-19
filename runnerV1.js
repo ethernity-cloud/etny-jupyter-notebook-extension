@@ -30,7 +30,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const ENCLAVE_IMAGE_IPFS_HASH = 'QmdyuRmvkgrQWQAESyGpkpbWJKtSEsSesRFodpvgfTHtzs';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
     const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmWoDZn181xdBPL85RW3qDeanLzgQz4L1AJ2ojjhqLJRGp';
-    const FILESET_HASH = 'v1::0';
+    const ZERO_CHECKSUM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    const FILESET_HASH = `v1::${ZERO_CHECKSUM}`;
 
     const certPem = `-----BEGIN CERTIFICATE-----
         MIIBdDCB+6ADAgECAgkAk7lTTBumyLowCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
@@ -88,9 +89,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const contract = etnyContract.getContract();
         const messageInterval = () => {
             if (intervalRepeats % 2 === 0) {
-                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, "\\ Waiting for the task to be processed...");
+                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `\\ Waiting for the task to be processed by ${nodeAddressMetadata} ...`);
             } else {
-                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `/ Waiting for the task to be processed...`);
+                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `/ Waiting for the task to be processed by ${nodeAddressMetadata} ...`);
             }
             intervalRepeats++;
         }
@@ -264,10 +265,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const createDORequest = async (imageMetadata, scriptHash) => {
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Submitting transaction for DO request on ${utils.formatDate()}`);
         // add here call to SC(smart contract)
-        const scriptMetadata = await getV1InputMetadata();
-        // console.log(imageMetadata);
-        // console.log(scriptHash);
-        const tx = await callContractAddDORequest(imageMetadata, scriptHash, scriptMetadata, nodeAddressMetadata);
+        const tx = await callContractAddDORequest(imageMetadata, scriptHash, FILESET_HASH, nodeAddressMetadata);
         const transactionHash = tx.hash;
         __dohash = transactionHash;
 
@@ -277,7 +275,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to create request, please check connectivity with Bloxberg node");
             return;
         }
-        loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was processed`);
+        loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was confirmed`);
     }
 
     const approveOrder = async (orderId) => {
@@ -290,6 +288,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         }
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order successfully approved!`);
         // loadingText = cells.writeMessageToCell(loadingCell, loadingText,`TX hash: ${tx.hash}`);
+
+        nodeAddressMetadata = (await etnyContract.getOrder(orderId)).dproc;
     }
 
     const getResultFromOrder = async (orderId) => {

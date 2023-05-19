@@ -3,10 +3,8 @@ define(function (require, exports, module) {
     const jsrsasign = require('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/8.0.20/jsrsasign-all-min.js');
     const elliptic = require('https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js');
     const js_sha256 = require('https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js');
-
-    const eciesScript = document.createElement('script');
-    eciesScript.setAttribute('src', 'https://cdn.jsdelivr.net/npm/eciesjs@0.3.16/dist/index.min.js');
-    document.head.appendChild(eciesScript);
+    const ethereumjs = require('https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js');
+    const ascii = require('./ascii');
 
     const curve = new elliptic.ec('p384');
 
@@ -100,7 +98,7 @@ define(function (require, exports, module) {
         // console.log('encrypted msg:', encryptedMessageObject);
 
         const base64Encrypted = encryptedDataToBase64Json(encryptedMessage);
-        // console.log(base64Encrypted);
+        console.log(base64Encrypted);
         return base64Encrypted;
     }
 
@@ -127,10 +125,33 @@ define(function (require, exports, module) {
 
         return decryptedData;
     }
+
+    const decryptWithPrivateKey1 = async (encryptMsg, account) => {
+        try {
+            const data = ethereumjs.Buffer.Buffer.from(encryptMsg, 'hex');
+
+            const structuredData = {
+                version: 'x25519-xsalsa20-poly1305',
+                ephemPublicKey: data.slice(0, 32).toString('base64'),
+                nonce: data.slice(32, 56).toString('base64'),
+                ciphertext: data.slice(56).toString('base64'),
+            };
+            const ct = `0x${ethereumjs.Buffer.Buffer.from(JSON.stringify(structuredData), 'utf8').toString('hex')}`;
+            const decryptedMessage = await ethereum.request({method: 'eth_decrypt',params: [ct, account]});
+            const decodedMessage = ascii.decode(decryptedMessage).toString();
+            console.log('The decrypted message is:', decodedMessage);
+            return {success: true, data: decodedMessage};
+        } catch (error) {
+            console.log(error.message);
+            return {success: false};
+        }
+    }
+
     module.exports = {
         encryptChallenge: execute,
         sha256,
         sha256_1,
-        decrypt: decryptWithPrivateKey
+        decrypt: decryptWithPrivateKey,
+        decrypt1: decryptWithPrivateKey1
     };
 });

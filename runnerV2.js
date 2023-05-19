@@ -9,6 +9,8 @@
  *
  */
 define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './crypto', './utils'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, crypto, utils) {
+    const ethereumjs = require('https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js');
+
     let nodeAddressMetadata = '';
     let authorName, titleOfResearch, emailAddress = '';
 
@@ -26,22 +28,22 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const LAST_BLOCKS = 20;
 
-    console.log('hey');
     const VERSION = 'v2';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmPu68UDzJsZiycEMY1tTkPbn2VPxBkFBAoMtfN5BYBaA1';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmYu2q9Gx4EaDKQw7AvbQnQDWtTEuq6rPtRW8foUPsu6uz';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
     const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'Qmc5vLxRq7rRhMUxQeFN2BD6WF8SUmTkM1Rg34SotmFWox';
-    const FILESET_HASH = 'v2::0';
+    const ZERO_CHECKSUM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    const FILESET_HASH = `v2::${ZERO_CHECKSUM}`;
 
     const certPem = `-----BEGIN CERTIFICATE-----
-    MIIBdTCB+6ADAgECAgkAljBZ2pPHeQEwCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
-    Q0FfQ0VSVDAgFw0yMzA1MTcwMjAxMDhaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
-    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAARbd+tqY+VD
-    JV8bDxuHJZAYxIVc0JF+cCd9NBDe1l9mRKb8tldLeuIxt6SZOABFiug6Oa64niqI
-    9PkfUo1Mkd7YN9EgoTZz4vvYpNoIDjA1raW3ZkpHlFMMQJZAwtujnMWjFzAVMBMG
-    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2kAMGYCMQCnrQ+YOTZY2WWm
-    BzTjlrFJBapCduARzKtzBWpSO4GyvX3FEJiwOIdEHBvuE/SPBpQCMQCPx4Ub47Fa
-    PXnbTRi7Y4fKIA2IoQo/bAKJsJDXtqb07le+zwh2Yv1D1RIuvX3JGH0=
+    MIIBdDCB+6ADAgECAgkA0yISKdruodgwCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
+    Q0FfQ0VSVDAgFw0yMzA1MTkxMjUxNTVaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
+    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAATQfHHei4bQ
+    0CkZWXX0NcpEdlXAr5K/lGF15qiRyeJIBIVyMkW222wlYCR9JRqzxf2H8Dj3tMmX
+    SoZyjb8DDP0cJA0le6WEUsEVa/I/cIu07QB7oRNVcOFuYCVjcRMhlnajFzAVMBMG
+    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQCjL3r1jKvEs0wd
+    U4u8LTLwV9ocv7w7H5cBadtYh5//6OtagRA44CjBCRlWM8L+mu0CMGSQu8NpBXV5
+    /h2a4SIjBrZnvlXi0SQCjyrpaC+ELqRe41E3ooJyA69ro0oAPb6N6w==
     -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
@@ -55,7 +57,6 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         7: "INPUT_CHECKSUM_ERROR"
     }
 
-    let tempWallet;
     const reset = () => {
         nodeAddressMetadata = '';
         authorName = '';
@@ -78,8 +79,6 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const initialize = async () => {
         ipfs.initialize();
         await etnyContract.initContract();
-        tempWallet = tempWallet || etnyContract.createRandomWallet();
-        console.log('tempWallet:', tempWallet.publicKey);
     }
 
     const listenForAddDORequestEvent = async () => {
@@ -92,9 +91,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const contract = etnyContract.getContract();
         const messageInterval = () => {
             if (intervalRepeats % 2 === 0) {
-                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, "\\ Waiting for the task to be processed...");
+                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `\\ Waiting for the task to be processed by ${nodeAddressMetadata} ...`);
             } else {
-                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `/ Waiting for the task to be processed...`);
+                loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `/ Waiting for the task to be processed by ${nodeAddressMetadata} ...`);
             }
             intervalRepeats++;
         }
@@ -204,6 +203,15 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         // console.log("total subscribed events:", contract.listenerCount());
     }
 
+    const getCurrentWalletPublicKey = async () => {
+        const account = etnyContract.getCurrentWallet();
+        const keyB64 = await window.ethereum.request({
+            method: 'eth_getEncryptionPublicKey',
+            params: [account],
+        });
+        return ethereumjs.Buffer.Buffer.from(keyB64, 'base64').toString('hex');
+    }
+
     const getV2ImageMetadata = async (challengeHash) => {
         //generating encrypted base64 hash of the challenge
         const base64EncryptedChallenge = await crypto.encryptChallenge(challengeHash, certPem);
@@ -211,8 +219,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         // uploading to IPFS the base64 encrypted challenge
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
 
+        const publicKey = await getCurrentWalletPublicKey();
         // image metadata for v2 format v2:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
-        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${tempWallet.publicKey}`;
+        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${publicKey}`;
     }
 
     const getV2InputMetadata = async () => {
@@ -222,6 +231,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         // uploading all python code to IPFS and received hash of transaction
         __scriptHash = await ipfs.uploadToIPFS(code);
 
+        console.log(scriptChecksum);
         return `v2:${__scriptHash}:${scriptChecksum}`
     }
 
@@ -268,10 +278,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const createDORequest = async (imageMetadata, scriptHash) => {
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Submitting transaction for DO request on ${utils.formatDate()}`);
         // add here call to SC(smart contract)
-        const scriptMetadata = await getV2InputMetadata();
-        // console.log(imageMetadata);
-        // console.log(scriptHash);
-        const tx = await callContractAddDORequest(imageMetadata, scriptHash, scriptMetadata, nodeAddressMetadata);
+        const tx = await callContractAddDORequest(imageMetadata, scriptHash, FILESET_HASH, nodeAddressMetadata);
         const transactionHash = tx.hash;
         __dohash = transactionHash;
 
@@ -281,7 +288,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to create request, please check connectivity with Bloxberg node");
             return;
         }
-        loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was processed`);
+        loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was confirmed`);
     }
 
     const approveOrder = async (orderId) => {
@@ -294,6 +301,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         }
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order successfully approved!`);
         // loadingText = cells.writeMessageToCell(loadingCell, loadingText,`TX hash: ${tx.hash}`);
+
+        nodeAddressMetadata = (await etnyContract.getOrder(orderId)).dproc;
     }
 
     const getResultFromOrder = async (orderId) => {
@@ -326,11 +335,18 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             // get the result value from IPFS using the `parsedOrderResult.resultIPFSHash`
             const ipfsResult = await ipfs.getFromIPFS(parsedOrderResult.resultIPFSHash);
             // decrypt data
-            const decryptedData = crypto.decrypt(ipfsResult, tempWallet.privateKey);
+            const currentWalletAddress = etnyContract.getCurrentWallet();
+            console.log(currentWalletAddress);
+            const decryptedData = await crypto.decrypt1(ipfsResult, currentWalletAddress);
+
+            if (!decryptedData.success) {
+                return {success: false, message: 'Could not decrypt the order result.'};
+            }
+
             // update the loading message to show the result value
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${decryptedData}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${decryptedData.data}`);
             // calculate the SHA-256 checksum of the result value
-            const ipfsResultChecksum = crypto.sha256_1(decryptedData);
+            const ipfsResultChecksum = crypto.sha256_1(decryptedData.data);
             // check if the calculated checksum matches the `transactionResult.checksum`
             if (ipfsResultChecksum !== transactionResult.checksum) {
                 return {success: false, message: 'Integrity check failed, checksum of the order result is wrong.'};
