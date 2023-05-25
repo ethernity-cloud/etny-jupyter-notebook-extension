@@ -10,7 +10,7 @@
  */
 define(["require", 'jquery', "base/js/namespace", './runnerFactory'],
     function (requirejs, $, Jupyter, runnerFactory) {
-        let etnyRunnerVersion = 'v1';
+        let etnyRunnerVersion = 'v2';
 
         const createEtnyButton = () => {
             $('#maintoolbar-container')
@@ -37,7 +37,7 @@ define(["require", 'jquery', "base/js/namespace", './runnerFactory'],
                 .text("Ethernity Cloud version");
             $("select#etny_runner_version_picker").append(option);
 
-            const versions = [{name: 'Ethernity Cloud v0', code: 'v0'}, {name: 'Ethernity Cloud v1', code: 'v1'}];
+            const versions = [{ name: 'Ethernity Cloud v0', code: 'v0' }, { name: 'Ethernity Cloud v1', code: 'v1' }, { name: 'Ethernity Cloud v2', code: 'v2' }];
             $.each(versions, function (key, version) {
                 const option = $("<option></option>")
                     .attr("value", version['name'])
@@ -48,12 +48,11 @@ define(["require", 'jquery', "base/js/namespace", './runnerFactory'],
                 $("select#etny_runner_version_picker").append(option);
             });
 
-            $("option#v1").prop("selected", true);
+            $("option#v2").prop("selected", true);
         }
 
         const setEtnyRunnerVersion = (e) => {
             const selectedRunner = $("select#etny_runner_version_picker").find(":selected");
-
             console.log(selectedRunner);
             if (selectedRunner.attr("name") != 'etny_runner_version_header') {
                 const code = selectedRunner.attr("code");

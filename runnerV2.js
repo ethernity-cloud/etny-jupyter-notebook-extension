@@ -1,14 +1,16 @@
 /**
- * main.js
- * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network
+ * runnerV2.js
+ * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network with version 2.0 of node
  *
- * @version 0.2.0
+ * @version 0.3.0
  * @author  Ciprian Florea, ciprian@ethernity.cloud
- * @updated 2023-01-09
+ * @updated 2023-04-19
  *
  *
  */
 define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './crypto', './utils'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, crypto, utils) {
+    const ethereumjs = require('https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js');
+
     let nodeAddressMetadata = '';
     let authorName, titleOfResearch, emailAddress = '';
 
@@ -26,23 +28,23 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const LAST_BLOCKS = 20;
 
-    const VERSION = 'v1';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmdyuRmvkgrQWQAESyGpkpbWJKtSEsSesRFodpvgfTHtzs';
+    const VERSION = 'v2';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmYu2q9Gx4EaDKQw7AvbQnQDWtTEuq6rPtRW8foUPsu6uz';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmWoDZn181xdBPL85RW3qDeanLzgQz4L1AJ2ojjhqLJRGp';
+    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'Qmc5vLxRq7rRhMUxQeFN2BD6WF8SUmTkM1Rg34SotmFWox';
     const ZERO_CHECKSUM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-    const FILESET_HASH = `v1::${ZERO_CHECKSUM}`;
+    const FILESET_HASH = `v2::${ZERO_CHECKSUM}`;
 
     const certPem = `-----BEGIN CERTIFICATE-----
-        MIIBdDCB+6ADAgECAgkAk7lTTBumyLowCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
-        Q0FfQ0VSVDAgFw0yMzAxMTExNjM1NDRaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
-        A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASUYAQ8ep17
-        baZp+ScHpr48q/ijwsgPs/JlXEWFoHd0UTZaqurcs09NtNzfASASMyTBBNH+pEek
-        kFBDitgLk8CmpVdGZ102IlCt1ZgVhygp12NEkHd1CNzdm+GYVjFSyHKjFzAVMBMG
-        A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQDJ1h3DNllIi5u1
-        Dc5voeCsTt2MPFk9iTCwGyKIrp/lrZPS3NgbJ53EPWO+71DgU4UCMHkffuV3+LHr
-        X3dMoLpSb+NwpWVk+wb+agK3aRQQJb72pt+LFUOAnkq7DoQEB8rBjg==
-        -----END CERTIFICATE-----`;
+    MIIBdDCB+6ADAgECAgkA0yISKdruodgwCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
+    Q0FfQ0VSVDAgFw0yMzA1MTkxMjUxNTVaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
+    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAATQfHHei4bQ
+    0CkZWXX0NcpEdlXAr5K/lGF15qiRyeJIBIVyMkW222wlYCR9JRqzxf2H8Dj3tMmX
+    SoZyjb8DDP0cJA0le6WEUsEVa/I/cIu07QB7oRNVcOFuYCVjcRMhlnajFzAVMBMG
+    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQCjL3r1jKvEs0wd
+    U4u8LTLwV9ocv7w7H5cBadtYh5//6OtagRA44CjBCRlWM8L+mu0CMGSQu8NpBXV5
+    /h2a4SIjBrZnvlXi0SQCjyrpaC+ELqRe41E3ooJyA69ro0oAPb6N6w==
+    -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
         0: "SUCCESS",
@@ -76,7 +78,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const initialize = async () => {
         ipfs.initialize();
-        return await etnyContract.initContract();
+        await etnyContract.initContract();
     }
 
     const listenForAddDORequestEvent = async () => {
@@ -184,7 +186,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     });
                     return;
                 }
-                const formattedCertificate = certificate.generateCertificateV1(parsedOrderResult);
+                const formattedCertificate = certificate.generateCertificateV2(parsedOrderResult);
                 await cells.insertCertificateCell(formattedCertificate);
                 const sha256FromCertificate = await certificate.generateSha256FromImage($);
                 const certificateData = await createBloxbergCertificate(parsedOrderResult, sha256FromCertificate);
@@ -201,25 +203,36 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         // console.log("total subscribed events:", contract.listenerCount());
     }
 
-    const getV1ImageMetadata = async (challengeHash) => {
+    const getCurrentWalletPublicKey = async () => {
+        const account = etnyContract.getCurrentWallet();
+        const keyB64 = await window.ethereum.request({
+            method: 'eth_getEncryptionPublicKey',
+            params: [account],
+        });
+        return ethereumjs.Buffer.Buffer.from(keyB64, 'base64').toString('hex');
+    }
+
+    const getV2ImageMetadata = async (challengeHash) => {
         //generating encrypted base64 hash of the challenge
         const base64EncryptedChallenge = await crypto.encryptChallenge(challengeHash, certPem);
 
         // uploading to IPFS the base64 encrypted challenge
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
 
-        // image metadata for v1 format v1:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
-        return `v1:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}`;
+        const publicKey = await getCurrentWalletPublicKey();
+        // image metadata for v2 format v2:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
+        return `v2:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${publicKey}`;
     }
 
-    const getV1InputMetadata = async () => {
+    const getV2InputMetadata = async () => {
         // extracting code from all the code cells
         const code = cells.extractPythonCode();
         const scriptChecksum = crypto.sha256_1(code);
         // uploading all python code to IPFS and received hash of transaction
         __scriptHash = await ipfs.uploadToIPFS(code);
 
-        return `v1:${__scriptHash}:${scriptChecksum}`
+        console.log(scriptChecksum);
+        return `v2:${__scriptHash}:${scriptChecksum}`
     }
 
     const parseOrderResult = (result) => {
@@ -321,10 +334,19 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
             // get the result value from IPFS using the `parsedOrderResult.resultIPFSHash`
             const ipfsResult = await ipfs.getFromIPFS(parsedOrderResult.resultIPFSHash);
+            // decrypt data
+            const currentWalletAddress = etnyContract.getCurrentWallet();
+            console.log(currentWalletAddress);
+            const decryptedData = await crypto.decrypt1(ipfsResult, currentWalletAddress);
+
+            if (!decryptedData.success) {
+                return {success: false, message: 'Could not decrypt the order result.'};
+            }
+
             // update the loading message to show the result value
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${ipfsResult}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${decryptedData.data}`);
             // calculate the SHA-256 checksum of the result value
-            const ipfsResultChecksum = crypto.sha256_1(ipfsResult);
+            const ipfsResultChecksum = crypto.sha256_1(decryptedData.data);
             // check if the calculated checksum matches the `transactionResult.checksum`
             if (ipfsResultChecksum !== transactionResult.checksum) {
                 return {success: false, message: 'Integrity check failed, checksum of the order result is wrong.'};
@@ -385,10 +407,10 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         await listenForAddDORequestEvent();
 
         // getting image metadata
-        const imageMetadata = await getV1ImageMetadata(challengeHash);
+        const imageMetadata = await getV2ImageMetadata(challengeHash);
 
         // getting script metadata
-        const scriptMetadata = await getV1InputMetadata();
+        const scriptMetadata = await getV2InputMetadata();
 
         // create new DO Request
         await createDORequest(imageMetadata, scriptMetadata);
@@ -459,7 +481,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             };
 
             dialog.modal({
-                title: "Ethernity Cloud Runner v1", body: $("<div></div>")
+                title: "Ethernity Cloud Runner v2", body: $("<div></div>")
                     .append("Every field is optional, it is only to enhance the generated certificate at the end of the process.")
                     .append($("<br/><br/>"))
                     .append($("<label style='font-weight: bold;'>Author or Group Name</label>"))

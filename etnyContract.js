@@ -92,6 +92,10 @@ define(function (require, exports, module) {
         };
     }
 
+    const createRandomWallet = () => {
+        return ethers.Wallet.createRandom();
+    }
+
     const generateWallet = (clientChallenge, enclaveChallenge) => {
         try {
             const encoded = clientChallenge + enclaveChallenge;
@@ -122,6 +126,7 @@ define(function (require, exports, module) {
         getResultFromOrder,
         parseTransactionBytes,
         generateWallet,
-        isNodeOperator
+        isNodeOperator,
+        createRandomWallet
     };
 });

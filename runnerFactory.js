@@ -8,7 +8,7 @@
  *
  *
  */
-define(["base/js/dialog", './runnerV0', './runnerV1'], function (dialog, runnerV0, runnerV1) {
+define(["base/js/dialog", './runnerV0', './runnerV1', './runnerV2'], function (dialog, runnerV0, runnerV1, runnerV2) {
     const run = async (etnyRunnerVersion) => {
         switch (etnyRunnerVersion) {
             case 'v0':
@@ -16,6 +16,9 @@ define(["base/js/dialog", './runnerV0', './runnerV1'], function (dialog, runnerV
                 break;
             case 'v1':
                 await runnerV1.run();
+                break;
+            case 'v2':
+                await runnerV2.run();
                 break;
             default:
                 dialog.modal({

@@ -64,9 +64,17 @@ jupyter contrib nbextension install --user
 jupyter notebook
 ```
 
+### 11. Install extension
+```
+jupyter nbextension install ./etny-jupyter-notebook-extension  
+jupyter nbextension enable etny-jupyter-notebook-extension/main
+```
 
 ## How to use
 We have to type our code which needs to be executed on the Ethernity Cloud ecosystem in the first cell of Jupyter Notebook.
 
 ## Demo
 A video on how it works will be made available soon
+
+jupyter nbextension install ./etny-jupyter-notebook-extension
+jupyter nbextension enable etny-jupyter-notebook-extension/main
