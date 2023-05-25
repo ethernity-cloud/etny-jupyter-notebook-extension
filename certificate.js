@@ -162,6 +162,51 @@ define(function (require, exports, module) {
             </div>`;
     }
 
+    const generateCertificateV3 = (certificate) => {
+        const publicTimestampDate = new Date(certificate.publicTimestamp * 1000);
+        const timestampDate = new Date(certificate.resultTimestamp * 1000);
+        return `
+            <div style="font-family: monospace;font-size: 12px;color: #16a34a;">
+              <span>${generateHash()}</span>
+              <br>              
+              <span>${generateTitle('ETHERNITY CLOUD CERTIFICATE')}</span>
+              <br>              
+              <span>${generateHash()}</span>
+              <br>              
+              <span>${insertCertificateRow(true)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO] Contract address: ${certificate.contractAddress}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO] Input transaction: ${certificate.inputTransactionHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO] Output transaction: ${certificate.outputTransactionHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INFO] PoX processing order: ${certificate.orderId}`)}</span>
+              <br>
+              <span>${insertCertificateRow(true)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT] Public image: ${certificate.imageHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT] Public script: ${certificate.scriptHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT] Public fileset: ${certificate.fileSetHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [INPUT] Public timestamp: ${utils.formatDate(publicTimestampDate)} [${certificate.publicTimestamp}]`)}</span>
+              <br>
+              <span>${insertCertificateRow(true)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Public result hash: ${certificate.resultHash.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Public result task code: ${certificate.resultTaskCode.trim()}`)}</span>
+              <br>
+              <span>${insertCertificateRow(false, ` [OUTPUT] Timestamp: ${utils.formatDate(timestampDate)} [${certificate.resultTimestamp}]`)}</span>
+              <br>
+              <span>${generateHash()}</span>
+              <br>
+              <span>${generateHash()}</span>
+            </div>`;
+    }
+
     const saveImage = (canvas) => {
         const link = document.createElement('a');
         link.download = `EthernityCloudCertificate.png`;
@@ -201,6 +246,7 @@ define(function (require, exports, module) {
         generateCertificate,
         generateCertificateV1,
         generateCertificateV2,
+        generateCertificateV3,
         generateSha256FromImage
     };
 });
