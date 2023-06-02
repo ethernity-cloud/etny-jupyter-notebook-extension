@@ -29,9 +29,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const LAST_BLOCKS = 20;
 
     const VERSION = 'v3';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmYu2q9Gx4EaDKQw7AvbQnQDWtTEuq6rPtRW8foUPsu6uz';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmNMVCrBZ4BkrB6j4Hgexc9amvpVTtv6mAH7tLpkRDTAw1';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'Qmc5vLxRq7rRhMUxQeFN2BD6WF8SUmTkM1Rg34SotmFWox';
+    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'Qmakjxyie1jqDNm4b4DXyAXymqrdGcuQxuEUxdgLciWg6G';
     const ZERO_CHECKSUM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
     const FILESET_HASH = `v3::${ZERO_CHECKSUM}`;
 
