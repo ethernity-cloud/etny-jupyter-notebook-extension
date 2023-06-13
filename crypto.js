@@ -110,7 +110,7 @@ define(function (require, exports, module) {
         return pubKey;
     }
 
-    const execute = async (message, certificate) => {
+    const encryptWithCertificate = async (message, certificate) => {
         const pubKey = loadCertificate(certificate);
         // console.log(message);
         return await encrypt(pubKey, message);
@@ -148,7 +148,7 @@ define(function (require, exports, module) {
     }
 
     module.exports = {
-        encryptChallenge: execute,
+        encryptWithCertificate,
         sha256,
         sha256_1,
         decrypt: decryptWithPrivateKey,

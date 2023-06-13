@@ -203,7 +203,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const getV1ImageMetadata = async (challengeHash) => {
         //generating encrypted base64 hash of the challenge
-        const base64EncryptedChallenge = await crypto.encryptChallenge(challengeHash, certPem);
+        const base64EncryptedChallenge = await crypto.encryptWithCertificate(challengeHash, certPem);
 
         // uploading to IPFS the base64 encrypted challenge
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);

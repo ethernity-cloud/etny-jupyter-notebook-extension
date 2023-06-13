@@ -21,6 +21,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     let __scriptHash = '';
     let __fileSetHash = '';
 
+    let interval = null;
     let loadingCell = null;
     let loadingText = '';
     let findOrderRepeats = 1;
@@ -70,6 +71,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         __scriptHash = '';
         __fileSetHash = '';
 
+        interval = null;
         loadingCell = null;
         loadingText = '';
         findOrderRepeats = 1;
@@ -77,12 +79,13 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     }
 
     const initialize = async () => {
+        console.log('initialize IPFS and contract RPC...');
         ipfs.initialize();
         await etnyContract.initContract();
+        // await etnyContract.signMessage('hello');
     }
 
     const listenForAddDORequestEvent = async () => {
-        let interval = null;
         let intervalRepeats = 1;
         let _addDORequestEVPassed = false;
         let _orderPlacedEVPassed = false;
@@ -214,7 +217,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const getV3ImageMetadata = async (challengeHash) => {
         //generating encrypted base64 hash of the challenge
-        const base64EncryptedChallenge = await crypto.encryptChallenge(challengeHash, certPem);
+        const base64EncryptedChallenge = await crypto.encryptWithCertificate(challengeHash, certPem);
 
         // uploading to IPFS the base64 encrypted challenge
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
@@ -229,7 +232,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const code = cells.extractPythonCode();
         const scriptChecksum = crypto.sha256_1(code);
         // uploading all python code to IPFS and received hash of transaction
-        const base64EncryptedScript = await crypto.encryptChallenge(code, certPem);
+        const base64EncryptedScript = await crypto.encryptWithCertificate(code, certPem);
         __scriptHash = await ipfs.uploadToIPFS(base64EncryptedScript);
 
         console.log(scriptChecksum);
@@ -421,7 +424,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const connectToMetaMaskAndSign = async () => {
         try {
             await etnyContract.getProvider().send("eth_requestAccounts", []);
-            await initialize();
+            // await initialize();
             const walletAddress = etnyContract.getCurrentWallet();
             return walletAddress !== null && walletAddress !== undefined;
         } catch (e) {

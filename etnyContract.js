@@ -27,6 +27,10 @@ define(function (require, exports, module) {
         currentWallet = await _getCurrentWallet();
     }
 
+    const getSigner = () => {
+        return signer;
+    }
+
     const getContract = () => {
         return etnyContract;
     }
@@ -110,8 +114,20 @@ define(function (require, exports, module) {
         }
     }
 
+    const signMessage = async (message) => {
+        const signer = getSigner();
+        console.log('signer:', signer);
+        const signedMessage = await signer.signMessage(message);
+
+        console.log(signedMessage);
+        const decrypdatedMessage = ethers.utils.verifyMessage(message, signedMessage);
+
+        console.log(decrypdatedMessage);
+    }
+
     module.exports = {
         getContract,
+        getSigner,
         contractAddress: etnyContractAddress,
         imageHash: IMAGE_HASH,
         getProvider,
@@ -127,6 +143,7 @@ define(function (require, exports, module) {
         parseTransactionBytes,
         generateWallet,
         isNodeOperator,
-        createRandomWallet
+        createRandomWallet,
+        signMessage
     };
 });
