@@ -114,15 +114,14 @@ define(function (require, exports, module) {
         }
     }
 
+    // facem checksum la cod in clar + semnam cu wallet => trimitem in metadatele noastre
+    // pe trusted zone  => calculez checksum la codul/input decriptat si verific semnatura ca e owner walletul care a initiat tranzactia
     const signMessage = async (message) => {
         const signer = getSigner();
         console.log('signer:', signer);
         const signedMessage = await signer.signMessage(message);
-
         console.log(signedMessage);
-        const decrypdatedMessage = ethers.utils.verifyMessage(message, signedMessage);
-
-        console.log(decrypdatedMessage);
+        return signedMessage;
     }
 
     module.exports = {

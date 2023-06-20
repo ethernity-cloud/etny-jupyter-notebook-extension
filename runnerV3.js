@@ -8,6 +8,7 @@
  *
  *
  */
+
 define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './crypto', './utils'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, crypto, utils) {
     const ethereumjs = require('https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js');
 
@@ -230,11 +231,12 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const getV3InputMetadata = async () => {
         // extracting code from all the code cells
         const code = cells.extractPythonCode();
-        const scriptChecksum = crypto.sha256_1(code);
+        let scriptChecksum = crypto.sha256_1(code);
         // uploading all python code to IPFS and received hash of transaction
         const base64EncryptedScript = await crypto.encryptWithCertificate(code, certPem);
         __scriptHash = await ipfs.uploadToIPFS(base64EncryptedScript);
 
+        scriptChecksum = await etnyContract.signMessage(scriptChecksum);
         console.log(scriptChecksum);
         return `v3:${__scriptHash}:${scriptChecksum}`
     }
