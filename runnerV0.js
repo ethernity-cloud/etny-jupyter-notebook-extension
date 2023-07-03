@@ -328,7 +328,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             await cleanup();
 
             loadingCell = await cells.insertLoadingCell(loadingText);
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Starting running task...');
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Started running task...');
 
             const res = await connectToMetaMaskAndSign();
 
