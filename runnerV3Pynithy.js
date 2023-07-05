@@ -32,20 +32,20 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const VERSION = 'v3';
     const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmRKDYXVcrVCnm2NbqJ8UHVhGvtZPbwpqB4XkAteaiJpLB';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmfTm2mDrcpvZ6XbYD3CGCP8kX2F69CZFSdirqUrPXX6Ct';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmWZHRnU8aZLgfWohGfDsM7PtZ4MYLGqULcZZnMNbpf4Bs';
+    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmVuZwqJ9bbHSf5aN3FTv5hn1WzsoYkvC7WZSZWgwS9orq';
     const ZERO_CHECKSUM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
     const FILESET_HASH = `${VERSION}::${ZERO_CHECKSUM}`;
 
     const certPem = `-----BEGIN CERTIFICATE-----
-    MIIBczCB+qADAgECAggT5+PLHZqhTjAKBggqhkjOPQQDAzASMRAwDgYDVQQDDAdD
-    QV9DRVJUMCAXDTIzMDYzMDE0NTMwN1oYDzQwOTYwMTAxMDAwMDAwWjAWMRQwEgYD
-    VQQDDAtTRVJWRVJfQ0VSVDB2MBAGByqGSM49AgEGBSuBBAAiA2IABNgOCWcQOhPh
-    m6ifThOuMBQG3W4IMC6NZ9lIHAXDYMwIPbIz7RvBx+cfPVh3mXUxLBl7h9WtPwXh
-    OO2hlwY7GkPWw+fOYg4OqRfIBlM1sTsIGdrfQZcQAZ/HFoRLv+9ocaMXMBUwEwYD
-    VR0lBAwwCgYIKwYBBQUHAwEwCgYIKoZIzj0EAwMDaAAwZQIwNsMDns8PK5YAzI8B
-    g2zGIRPtqWYOkonXN5qteTl458zGwMa6UWbxwvFvUZAn3LjIAjEAxS19K3+VkVqZ
-    oD99pi3e7imPzsY2fqAw1zS8hSjsTQuJoOJIkZlY/0ofZpIu0hye
+    MIIBdTCB+6ADAgECAgkA+tKgHMv7GX4wCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
+    Q0FfQ0VSVDAgFw0yMzA3MDQxNDMxNTBaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
+    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASAJYRc4b+2
+    lwjwVojzgedOQObRSadR3jedRfOxVoBxCPj0LbQQwAhQao4wHD8JE2OoW0ydScPe
+    7O2ZbJfsCSzsUZUu0eJ6tr502PE70VFaOs46b7jWTd9KC+4Tz7ilOnejFzAVMBMG
+    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2kAMGYCMQDokReeoVjVxHyE
+    I1nP07/qaBmFcz4rnAVU3+6HdcKAwcmJfTt5+fpJuwgM+7XZlfQCMQDly8Is79eo
+    /F5LMq5srUVGdWxoi/ShpFy6RcONY/KnQowZIMFLJuR4PkDcFtwUfVo=
     -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
@@ -236,7 +236,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         const base64EncryptedScript = await crypto.encryptWithCertificate(code, certPem);
         __scriptHash = await ipfs.uploadToIPFS(base64EncryptedScript);
 
-        scriptChecksum = await etnyContract.signMessage(scriptChecksum);
+        // scriptChecksum = await etnyContract.signMessage(scriptChecksum);
         console.log(scriptChecksum);
         return `${VERSION}:${__scriptHash}:${scriptChecksum}`
     }
