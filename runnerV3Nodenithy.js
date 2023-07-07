@@ -9,7 +9,7 @@
  *
  */
 
-define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './crypto', './utils'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, crypto, utils) {
+define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './imageRegistryContract', './ipfs', './certificate', './cell', './crypto', './utils'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, imageRegistryContract, ipfs, certificate, cells, crypto, utils) {
     const ethereumjs = require('https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js');
 
     let nodeAddressMetadata = '';
@@ -28,25 +28,15 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     let findOrderRepeats = 1;
     let getResultFromOrderRepeats = 1;
 
+    let ENCLAVE_IMAGE_IPFS_HASH = '';
+    let ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = '';
+    let ENCLAVE_PUBLIC_KEY = '';
+
     const LAST_BLOCKS = 20;
 
     const VERSION = 'v3';
     const ENCLAVE_IMAGE_NAME = 'etny-nodenithy';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmbWLrCq62fqUhMWhnoXFcs1zDvavSumbG4uWpdH1CW15q';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'Qmdve6jQKYryuLV6qv5KNYS2HGdK2s7d4181aZzyJGmrJc';
     const ZERO_CHECKSUM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-    const FILESET_HASH = `${VERSION}::${ZERO_CHECKSUM}`;
-
-    const certPem = `-----BEGIN CERTIFICATE-----
-    MIIBczCB+qADAgECAghGKpLcR3xGODAKBggqhkjOPQQDAzASMRAwDgYDVQQDDAdD
-    QV9DRVJUMCAXDTIzMDcwNDE0NDIyNVoYDzQwOTYwMTAxMDAwMDAwWjAWMRQwEgYD
-    VQQDDAtTRVJWRVJfQ0VSVDB2MBAGByqGSM49AgEGBSuBBAAiA2IABAcqE7P0/C4J
-    XiQehINr1SCbxBjyXHe/Q+k8aeo8LUnUuIXn7JSO4IETwrIllgkuVcHR5HT6wkZf
-    p2Z/vvTBIc/eXfOgQnrlRc+c1a7uqHkxpYG7gXXfDsEiEjpPN5VceKMXMBUwEwYD
-    VR0lBAwwCgYIKwYBBQUHAwEwCgYIKoZIzj0EAwMDaAAwZQIwc4irmxjMP4J8mRSy
-    8UCwMSCWjcZOz6Dcp+qUmbm/tq/CuDYqMqa7A8/U4TLd1WLQAjEAqCQKvahoBGUL
-    8kKG5u86dScFPcInu5eswGcM8gox7ktOqjmkdA54wQet6BqrGoTQ
-    -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
         0: "SUCCESS",
@@ -83,7 +73,17 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         console.log('initialize IPFS and contract RPC...');
         ipfs.initialize();
         await etnyContract.initContract();
-        // await etnyContract.signMessage('hello');
+        await imageRegistryContract.initContract();
+    }
+
+    const getEnclaveDetails = async () => {
+        const details = await imageRegistryContract.getEnclaveDetailsV3(ENCLAVE_IMAGE_NAME, VERSION);
+        console.log(details);
+        if (details) {
+            ENCLAVE_IMAGE_IPFS_HASH = details[0];
+            ENCLAVE_PUBLIC_KEY = details[1];
+            ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = details[2];
+        }
     }
 
     const listenForAddDORequestEvent = async () => {
@@ -218,7 +218,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const getV3ImageMetadata = async (challengeHash) => {
         //generating encrypted base64 hash of the challenge
-        const base64EncryptedChallenge = await crypto.encryptWithCertificate(challengeHash, certPem);
+        const base64EncryptedChallenge = await crypto.encryptWithCertificate(challengeHash, ENCLAVE_PUBLIC_KEY);
 
         // uploading to IPFS the base64 encrypted challenge
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
@@ -228,17 +228,23 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         return `${VERSION}:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${publicKey}`;
     }
 
-    const getV3InputMetadata = async () => {
+    const getV3CodeMetadata = async () => {
         // extracting code from all the code cells
         const code = cells.extractPythonCode();
-        const scriptChecksum = crypto.sha256_1(code);
-        // uploading all python code to IPFS and received hash of transaction
-        const base64EncryptedScript = await crypto.encryptWithCertificate(code, certPem);
+        let scriptChecksum = crypto.sha256_1(code);
+        // uploading all node js code to IPFS and received hash of transaction
+        const base64EncryptedScript = await crypto.encryptWithCertificate(code, ENCLAVE_PUBLIC_KEY);
         __scriptHash = await ipfs.uploadToIPFS(base64EncryptedScript);
 
-        // scriptChecksum = await etnyContract.signMessage(scriptChecksum);
+        scriptChecksum = await etnyContract.signMessage(scriptChecksum);
         console.log(scriptChecksum);
         return `${VERSION}:${__scriptHash}:${scriptChecksum}`
+    }
+
+    const getV3InputMedata = async () => {
+        const fileSetChecksum = await etnyContract.signMessage(ZERO_CHECKSUM);
+        console.log(fileSetChecksum);
+        return `${VERSION}::${fileSetChecksum}`
     }
 
     const parseOrderResult = (result) => {
@@ -282,10 +288,10 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         return !(!txReceipt && txReceipt.status === 0);
     }
 
-    const createDORequest = async (imageMetadata, scriptHash) => {
+    const createDORequest = async (imageMetadata, codeMetadata, inputMetadata) => {
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Submitting transaction for DO request on ${utils.formatDate()}`);
         // add here call to SC(smart contract)
-        const tx = await callContractAddDORequest(imageMetadata, scriptHash, FILESET_HASH, nodeAddressMetadata);
+        const tx = await callContractAddDORequest(imageMetadata, codeMetadata, inputMetadata, nodeAddressMetadata);
         const transactionHash = tx.hash;
         __dohash = transactionHash;
 
@@ -412,22 +418,19 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     /// main method
     const runOnEthernity = async () => {
         await listenForAddDORequestEvent();
-
         // getting image metadata
         const imageMetadata = await getV3ImageMetadata(challengeHash);
-
         // getting script metadata
-        const scriptMetadata = await getV3InputMetadata();
-
+        const codeMetadata = await getV3CodeMetadata();
+        // getting input metadata
+        const inputMetadata = await getV3InputMedata();
         // create new DO Request
-        await createDORequest(imageMetadata, scriptMetadata);
-        // from here the logic is moved into Events
+        await createDORequest(imageMetadata, codeMetadata, inputMetadata);
     }
 
     const connectToMetaMaskAndSign = async () => {
         try {
             await etnyContract.getProvider().send("eth_requestAccounts", []);
-            // await initialize();
             const walletAddress = etnyContract.getCurrentWallet();
             return walletAddress !== null && walletAddress !== undefined;
         } catch (e) {
@@ -454,6 +457,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
     const runOnEthernityHandler = async () => {
         await initialize();
         await cleanup();
+
+        await getEnclaveDetails();
 
         loadingCell = await cells.insertLoadingCell(loadingText);
         loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Started running task...');
