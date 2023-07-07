@@ -10,7 +10,7 @@
  */
 define(["require", 'jquery', "base/js/namespace", './runnerFactory'],
     function (requirejs, $, Jupyter, runnerFactory) {
-        let etnyRunnerVersion = 'v3';
+        let etnyRunnerVersion = 'v3-pynithy';
 
         const startRunner = async () => {
             await runnerFactory.run(etnyRunnerVersion)
@@ -60,7 +60,7 @@ define(["require", 'jquery', "base/js/namespace", './runnerFactory'],
                 $("select#etny_runner_version_picker").append(option);
             });
 
-            $("option#v3").prop("selected", true);
+            $("option#v3-pynithy").prop("selected", true);
         }
 
         const setEtnyRunnerVersion = (e) => {
