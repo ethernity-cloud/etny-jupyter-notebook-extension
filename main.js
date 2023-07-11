@@ -42,8 +42,8 @@ define(["require", 'jquery', "base/js/namespace", './runnerFactory'],
             $("select#etny_runner_version_picker").append(option);
 
             const versions = [
-                { name: 'Ethernity Cloud v0', code: 'v0' },
-                { name: 'Ethernity Cloud v1', code: 'v1' },
+                // { name: 'Ethernity Cloud v0', code: 'v0' },
+                // { name: 'Ethernity Cloud v1', code: 'v1' },
                 { name: 'Ethernity Cloud v2 - Pynithy', code: 'v2-pynithy' },
                 { name: 'Ethernity Cloud v2 - Nodenithy', code: 'v2-nodenithy' },
                 { name: 'Ethernity Cloud v3 - Pynithy', code: 'v3-pynithy' },
