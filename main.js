@@ -2,9 +2,9 @@
  * main.js
  * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network
  *
- * @version 0.2.0
+ * @version 0.3.0
  * @author  Ciprian Florea, ciprian@ethernity.cloud
- * @updated 2022-11-08
+ * @updated 2023-07-18
  *
  *
  */
@@ -44,10 +44,10 @@ define(["require", 'jquery', "base/js/namespace", './runnerFactory'],
             const versions = [
                 // { name: 'Ethernity Cloud v0', code: 'v0' },
                 // { name: 'Ethernity Cloud v1', code: 'v1' },
-                { name: 'Ethernity Cloud v2 - Pynithy', code: 'v2-pynithy' },
-                { name: 'Ethernity Cloud v2 - Nodenithy', code: 'v2-nodenithy' },
-                { name: 'Ethernity Cloud v3 - Pynithy', code: 'v3-pynithy' },
-                { name: 'Ethernity Cloud v3 - Nodenithy', code: 'v3-nodenithy' }
+                // { name: 'Ethernity Cloud v2 - Pynithy', code: 'v2-pynithy' },
+                // { name: 'Ethernity Cloud v2 - Nodenithy', code: 'v2-nodenithy' },
+                { name: 'Ethernity Cloud v3 - Pynithy TestNet', code: 'v3-pynithy' },
+                { name: 'Ethernity Cloud v3 - Nodenithy TestNet', code: 'v3-nodenithy' }
             ];
 
             $.each(versions, function (key, version) {
