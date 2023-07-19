@@ -5,7 +5,7 @@ define(function (require, exports, module) {
     require("https://cdn.jsdelivr.net/npm/abi-decoder@1.2.0/dist/abi-decoder.js");
 
 
-    const etnyContractAddress = "0x549A6E06BB2084100148D50F51CF77a3436C3Ae7";
+    const etnyContractAddress = "0x70c5c7b31E116AF7156Cf69BD0Edbf9B2A86ad88";
     const IMAGE_HASH = "QmexKQm3wqeV63kR1G83ktCzodMAsdYRi4vV4RGhn1e1NT:etny-pynithy";
 
     let provider, signer, etnyContract = null, etnyContactWithProvider, currentWallet;
