@@ -53,7 +53,7 @@ define(function (require, exports, module) {
     }
 
     const addDORequest = async (imageMetadata = IMAGE_HASH, payloadMetadata, inputMetadata, nodeAddress) => {
-        const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 60, instances = 1, maxPrice = 10;
+        const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 1, instances = 1, maxPrice = 10;
         return await etnyContract._addDORequest(cpu, memory, storage, bandwidth, duration, instances, maxPrice, imageMetadata, payloadMetadata, inputMetadata, nodeAddress);
     }
 
