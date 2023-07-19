@@ -5,7 +5,7 @@ define(function (require, exports, module) {
     require("https://cdn.jsdelivr.net/npm/abi-decoder@1.2.0/dist/abi-decoder.js");
 
 
-    const etnyContractAddress = "0x70c5c7b31E116AF7156Cf69BD0Edbf9B2A86ad88";
+    const etnyContractAddress = "0x02882F03097fE8cD31afbdFbB5D72a498B41112c";
     const IMAGE_HASH = "QmexKQm3wqeV63kR1G83ktCzodMAsdYRi4vV4RGhn1e1NT:etny-pynithy";
 
     let provider, signer, etnyContract = null, etnyContactWithProvider, currentWallet;
@@ -53,7 +53,7 @@ define(function (require, exports, module) {
     }
 
     const addDORequest = async (imageMetadata = IMAGE_HASH, payloadMetadata, inputMetadata, nodeAddress) => {
-        const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 60, instances = 1, maxPrice = 10;
+        const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 1, instances = 1, maxPrice = 10;
         return await etnyContract._addDORequest(cpu, memory, storage, bandwidth, duration, instances, maxPrice, imageMetadata, payloadMetadata, inputMetadata, nodeAddress);
     }
 
