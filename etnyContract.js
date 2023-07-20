@@ -74,6 +74,10 @@ define(function (require, exports, module) {
         return await etnyContract._getResultFromOrder(orderId);
     }
 
+    const redeemTokens = async (account) => {
+        return await etnyContract.faucet({from: account});
+    }
+
     const isNodeOperator = async (account) => {
         try {
             const requests = await etnyContactWithProvider._getMyDPRequests({from: account});
@@ -144,6 +148,7 @@ define(function (require, exports, module) {
         generateWallet,
         isNodeOperator,
         createRandomWallet,
-        signMessage
+        signMessage,
+        redeemTokens
     };
 });
