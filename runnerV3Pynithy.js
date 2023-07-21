@@ -88,12 +88,16 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const redeemTokens = async () => {
         const account = etnyContract.getCurrentWallet();
-        const tx = await etnyContract.redeemTokens(account);
-        const transactionHash = tx.hash;
-        const isProcessed = await waitForTransactionToBeProcessed(transactionHash);
-        if (!isProcessed) {
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to create request, please check connectivity with Bloxberg node");
-            return;
+        const balance = await etnyContract.getBalance(account);
+        console.log(balance);
+        if (parseInt(balance, 10) <= 100) {
+            const tx = await etnyContract.redeemTokens(account);
+            const transactionHash = tx.hash;
+            const isProcessed = await waitForTransactionToBeProcessed(transactionHash);
+            if (!isProcessed) {
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to create request, please check connectivity with Bloxberg node");
+                return;
+            }
         }
     }
 

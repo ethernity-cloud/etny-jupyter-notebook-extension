@@ -52,6 +52,20 @@ define(function (require, exports, module) {
         }
     }
 
+    const getBalance = async (account) => {
+        try {
+            const balance = await etnyContract.balanceOf(account);
+
+            // convert a currency unit from wei to ether
+            return ethers.utils.formatEther(balance);
+
+            // console.log(`balance: ${balanceFormatted} ETNY`);
+            // return balanceFormatted;
+        } catch (ex) {
+            return ex.message;
+        }
+    }
+
     const addDORequest = async (imageMetadata = IMAGE_HASH, payloadMetadata, inputMetadata, nodeAddress) => {
         const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 1, instances = 1, maxPrice = 10;
         return await etnyContract._addDORequest(cpu, memory, storage, bandwidth, duration, instances, maxPrice, imageMetadata, payloadMetadata, inputMetadata, nodeAddress);
@@ -139,6 +153,7 @@ define(function (require, exports, module) {
         isAddress,
         getCurrentWallet,
         initContract,
+        getBalance,
         addDORequest,
         getOrdersCount,
         getOrder,
