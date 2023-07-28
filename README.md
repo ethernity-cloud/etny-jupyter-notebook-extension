@@ -39,7 +39,7 @@ sudo apt install pip -y
 ### 6. Install Jupyter Notebook
 Then, we can continue to install jupyter notebook. Type in the same console:
 ```
-pip install notebook
+pip install notebook==6.5.4
 ```
 ### 7. Install Jupyter Notebook nbextensions
 And then we have to install the nbextensions by using the command below:
