@@ -63,9 +63,9 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             const contract = etnyContract.getContract();
             const messageInterval = () => {
                 if (intervalRepeats % 2 === 0) {
-                    loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, "\\ Waiting for the task to be processed...");
+                    loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `\\ Waiting for the task to be processed by ${nodeAddressMetadata} ...`);
                 } else {
-                    loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `/ Waiting for the task to be processed...`);
+                    loadingText = cells.updateLastLineOfCell(loadingCell, loadingText, `/ Waiting for the task to be processed by ${nodeAddressMetadata} ...`);
                 }
                 intervalRepeats++;
             }
@@ -200,12 +200,12 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     loadingText = cells.writeMessageToCell(loadingCell, loadingText, "Unable to create request, please check connectivity with Bloxberg node");
                     return;
                 }
-                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was processed`);
+                loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Transaction ${transactionHash} was confirmed`);
             } catch (e) {
                 dialog.modal({
                     title: "Ethernity Cloud",
                     body: "There was an error creating DO Request.",
-                    buttons: { OK: { class: "btn-primary" } },
+                    buttons: {OK: {class: "btn-primary"}},
                     notebook: Jupyter.notebook,
                     keyboard_manager: Jupyter.keyboard_manager,
                 });
@@ -222,6 +222,8 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             }
             loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Order successfully approved!`);
             // loadingText = cells.writeMessageToCell(loadingCell, loadingText,`TX hash: ${tx.hash}`);
+
+            nodeAddressMetadata = (await etnyContract.getOrder(orderId)).dproc;
         }
 
         const getResultFromOrder = async (orderId) => {
@@ -326,7 +328,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             await cleanup();
 
             loadingCell = await cells.insertLoadingCell(loadingText);
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Starting running task...');
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, 'Started running task...');
 
             const res = await connectToMetaMaskAndSign();
 
@@ -372,35 +374,35 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                         .append(nodeAddressCheckbox)
                         .append($("<label style='font-weight: bold;'>Node Address</label>"))
                         .append(nodeAddress), buttons: {
-                            'Run on Ethernity Cloud': {
-                                class: "btn-primary", click: async function (e) {
-                                    e.preventDefault();
-                                    authorName = $('#authorName').val();
-                                    titleOfResearch = $('#titleOfResearch').val();
-                                    emailAddress = $('#emailAddress').val();
+                        'Run on Ethernity Cloud': {
+                            class: "btn-primary", click: async function (e) {
+                                e.preventDefault();
+                                authorName = $('#authorName').val();
+                                titleOfResearch = $('#titleOfResearch').val();
+                                emailAddress = $('#emailAddress').val();
 
-                                    if ($('#runOnNodeCheckbox').is(':checked')) {
-                                        const nodeAddress = $('#nodeAddress').val();
-                                        if (etnyContract.isAddress(nodeAddress)) {
-                                            const isNode = await etnyContract.isNodeOperator(nodeAddress);
-                                            if (isNode) {
-                                                nodeAddressMetadata = nodeAddress;
-                                            } else {
-                                                alert('Introduced address is not a valid node operator address');
-                                                return false;
-                                            }
+                                if ($('#runOnNodeCheckbox').is(':checked')) {
+                                    const nodeAddress = $('#nodeAddress').val();
+                                    if (etnyContract.isAddress(nodeAddress)) {
+                                        const isNode = await etnyContract.isNodeOperator(nodeAddress);
+                                        if (isNode) {
+                                            nodeAddressMetadata = nodeAddress;
                                         } else {
-                                            alert('Introduced address is not a valid wallet address');
+                                            alert('Introduced address is not a valid node operator address');
                                             return false;
                                         }
                                     } else {
-                                        nodeAddressMetadata = '';
+                                        alert('Introduced address is not a valid wallet address');
+                                        return false;
                                     }
-
-                                    await runOnEthernity();
+                                } else {
+                                    nodeAddressMetadata = '';
                                 }
+
+                                await runOnEthernity();
                             }
-                        }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
+                        }
+                    }, notebook: Jupyter.notebook, keyboard_manager: Jupyter.keyboard_manager
                 });
 
                 setTimeout(() => {
@@ -410,7 +412,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                 dialog.modal({
                     title: "Ethernity Cloud",
                     body: "There was an error connecting to your wallet.",
-                    buttons: { OK: { class: "btn-primary" } },
+                    buttons: {OK: {class: "btn-primary"}},
                     notebook: Jupyter.notebook,
                     keyboard_manager: Jupyter.keyboard_manager,
                 });

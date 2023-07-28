@@ -3,18 +3,10 @@ define(function (require, exports, module) {
     const jsrsasign = require('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/8.0.20/jsrsasign-all-min.js');
     const elliptic = require('https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js');
     const js_sha256 = require('https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js');
+    const ethereumjs = require('https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js');
+    const ascii = require('./ascii');
 
     const curve = new elliptic.ec('p384');
-    const certPem = `-----BEGIN CERTIFICATE-----
-        MIIBdDCB+6ADAgECAgkAk7lTTBumyLowCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
-        Q0FfQ0VSVDAgFw0yMzAxMTExNjM1NDRaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
-        A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASUYAQ8ep17
-        baZp+ScHpr48q/ijwsgPs/JlXEWFoHd0UTZaqurcs09NtNzfASASMyTBBNH+pEek
-        kFBDitgLk8CmpVdGZ102IlCt1ZgVhygp12NEkHd1CNzdm+GYVjFSyHKjFzAVMBMG
-        A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQDJ1h3DNllIi5u1
-        Dc5voeCsTt2MPFk9iTCwGyKIrp/lrZPS3NgbJ53EPWO+71DgU4UCMHkffuV3+LHr
-        X3dMoLpSb+NwpWVk+wb+agK3aRQQJb72pt+LFUOAnkq7DoQEB8rBjg==
-        -----END CERTIFICATE-----`;
 
     const sha256 = async (value) => {
         const buffer = new TextEncoder().encode(value);
@@ -25,7 +17,7 @@ define(function (require, exports, module) {
     const sha256_1 = (value, asHex = false) => {
         const buffer = new TextEncoder().encode(value);
         const sha = js_sha256.sha256(buffer);
-        if (asHex){
+        if (asHex) {
             return sha.toString('hex');
         }
         return sha.toString();
@@ -106,27 +98,60 @@ define(function (require, exports, module) {
         // console.log('encrypted msg:', encryptedMessageObject);
 
         const base64Encrypted = encryptedDataToBase64Json(encryptedMessage);
-        // console.log(base64Encrypted);
+        console.log(base64Encrypted);
         return base64Encrypted;
     }
 
-    const loadCertificate = () => {
+    const loadCertificate = (certificate) => {
         const c = new X509();
-        c.readCertPEM(certPem);
+        c.readCertPEM(certificate);
         const pubKey = c.getPublicKey().pubKeyHex;
         // console.log(pubKey);
         return pubKey;
     }
 
-    const execute = async (message) => {
-        const pubKey = loadCertificate();
+    const encryptWithCertificate = async (message, certificate) => {
+        const pubKey = loadCertificate(certificate);
         // console.log(message);
         return await encrypt(pubKey, message);
     }
 
+    const decryptWithPrivateKey = (encryptedData, privateKey) => {
+        const pk = window.ecies.PrivateKey.fromHex(
+            privateKey.replace('0x', '')
+        );
+
+        const decryptedData = window.ecies.decrypt(pk.toHex(), window.ecies.utils.decodeHex(encryptedData)).toString()
+
+        return decryptedData;
+    }
+
+    const decryptWithPrivateKey1 = async (encryptMsg, account) => {
+        try {
+            const data = ethereumjs.Buffer.Buffer.from(encryptMsg, 'hex');
+
+            const structuredData = {
+                version: 'x25519-xsalsa20-poly1305',
+                ephemPublicKey: data.slice(0, 32).toString('base64'),
+                nonce: data.slice(32, 56).toString('base64'),
+                ciphertext: data.slice(56).toString('base64'),
+            };
+            const ct = `0x${ethereumjs.Buffer.Buffer.from(JSON.stringify(structuredData), 'utf8').toString('hex')}`;
+            const decryptedMessage = await ethereum.request({method: 'eth_decrypt',params: [ct, account]});
+            const decodedMessage = ascii.decode(decryptedMessage).toString();
+            console.log('The decrypted message is:', decodedMessage);
+            return {success: true, data: decodedMessage};
+        } catch (error) {
+            console.log(error.message);
+            return {success: false};
+        }
+    }
+
     module.exports = {
-        encryptChallenge: execute,
+        encryptWithCertificate,
         sha256,
-        sha256_1
+        sha256_1,
+        decrypt: decryptWithPrivateKey,
+        decrypt1: decryptWithPrivateKey1
     };
 });

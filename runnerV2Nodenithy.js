@@ -1,14 +1,16 @@
 /**
- * main.js
- * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network
+ * runnerV2.js
+ * An extension that allows to execute a task using an existing enclave provided by Ethernity Cloud Network with version 2.0 of node
  *
- * @version 0.2.0
+ * @version 0.3.0
  * @author  Ciprian Florea, ciprian@ethernity.cloud
- * @updated 2023-01-09
+ * @updated 2023-04-19
  *
  *
  */
 define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergAPI', './etnyContract', './ipfs', './certificate', './cell', './crypto', './utils'], function (require, $, Jupyter, dialog, bloxbergAPI, etnyContract, ipfs, certificate, cells, crypto, utils) {
+    const ethereumjs = require('https://cdn.jsdelivr.net/gh/ethereumjs/browser-builds/dist/ethereumjs-tx/ethereumjs-tx-1.3.3.min.js');
+
     let nodeAddressMetadata = '';
     let authorName, titleOfResearch, emailAddress = '';
 
@@ -26,23 +28,23 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const LAST_BLOCKS = 20;
 
-    const VERSION = 'v1';
-    const ENCLAVE_IMAGE_IPFS_HASH = 'QmdyuRmvkgrQWQAESyGpkpbWJKtSEsSesRFodpvgfTHtzs';
-    const ENCLAVE_IMAGE_NAME = 'etny-pynithy';
-    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmWoDZn181xdBPL85RW3qDeanLzgQz4L1AJ2ojjhqLJRGp';
+    const VERSION = 'v2';
+    const ENCLAVE_IMAGE_NAME = 'etny-nodenithy';
+    const ENCLAVE_IMAGE_IPFS_HASH = 'QmSgy6KnEtQDR1ZXi9mgTaxP6Dqygym2FoS2RZjXwagvRr';
+    const ENCLAVE_DOCKER_COMPOSE_IPFS_HASH = 'QmdGZNeCWNZvk3N1MHjxriXQCcQqQy5yUvh8gzPaDVnuiC';
     const ZERO_CHECKSUM = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-    const FILESET_HASH = `v1::${ZERO_CHECKSUM}`;
+    const FILESET_HASH = `${VERSION}::${ZERO_CHECKSUM}`;
 
     const certPem = `-----BEGIN CERTIFICATE-----
-        MIIBdDCB+6ADAgECAgkAk7lTTBumyLowCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
-        Q0FfQ0VSVDAgFw0yMzAxMTExNjM1NDRaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
-        A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAASUYAQ8ep17
-        baZp+ScHpr48q/ijwsgPs/JlXEWFoHd0UTZaqurcs09NtNzfASASMyTBBNH+pEek
-        kFBDitgLk8CmpVdGZ102IlCt1ZgVhygp12NEkHd1CNzdm+GYVjFSyHKjFzAVMBMG
-        A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQDJ1h3DNllIi5u1
-        Dc5voeCsTt2MPFk9iTCwGyKIrp/lrZPS3NgbJ53EPWO+71DgU4UCMHkffuV3+LHr
-        X3dMoLpSb+NwpWVk+wb+agK3aRQQJb72pt+LFUOAnkq7DoQEB8rBjg==
-        -----END CERTIFICATE-----`;
+    MIIBdDCB+6ADAgECAgkApPACWsKC+q4wCgYIKoZIzj0EAwMwEjEQMA4GA1UEAwwH
+    Q0FfQ0VSVDAgFw0yMzA3MDQxMjA4MTlaGA80MDk2MDEwMTAwMDAwMFowFjEUMBIG
+    A1UEAwwLU0VSVkVSX0NFUlQwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAQ5VMHCQqd2
+    spVSG8u6OwQ66dHr2m7Z6Py8hkCUOE3HDoHjEO8HqJJ9oyTfAG8873AHddwjhQJS
+    j/RfAd+rjj2AlMqh0YQBkjsjlzR5GBNeYPlN519GhdrKoso+RAcsKcCjFzAVMBMG
+    A1UdJQQMMAoGCCsGAQUFBwMBMAoGCCqGSM49BAMDA2gAMGUCMQCcqsrgGVX0jl2D
+    ZGl+2cVFaITg9nBiPshyVCVPRITE15M4HLkfp5PvrwWhw9en1XICMEeTpRoiCf3L
+    q0mmUt6WUqFVdVsC+kOTvFwa0RoMvTSvhRLHgKGHo1cTMRJvy9QkGg==
+    -----END CERTIFICATE-----`;
 
     const OrderTaskStatus = {
         0: "SUCCESS",
@@ -76,7 +78,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
     const initialize = async () => {
         ipfs.initialize();
-        return await etnyContract.initContract();
+        await etnyContract.initContract();
     }
 
     const listenForAddDORequestEvent = async () => {
@@ -184,7 +186,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
                     });
                     return;
                 }
-                const formattedCertificate = certificate.generateCertificateV1(parsedOrderResult);
+                const formattedCertificate = certificate.generateCertificateV2(parsedOrderResult);
                 await cells.insertCertificateCell(formattedCertificate);
                 const sha256FromCertificate = await certificate.generateSha256FromImage($);
                 const certificateData = await createBloxbergCertificate(parsedOrderResult, sha256FromCertificate);
@@ -201,32 +203,45 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         // console.log("total subscribed events:", contract.listenerCount());
     }
 
-    const getV1ImageMetadata = async (challengeHash) => {
+    const getCurrentWalletPublicKey = async () => {
+        const account = etnyContract.getCurrentWallet();
+        const keyB64 = await window.ethereum.request({
+            method: 'eth_getEncryptionPublicKey',
+            params: [account],
+        });
+        return ethereumjs.Buffer.Buffer.from(keyB64, 'base64').toString('hex');
+    }
+
+    const getV2ImageMetadata = async (challengeHash) => {
         //generating encrypted base64 hash of the challenge
         const base64EncryptedChallenge = await crypto.encryptWithCertificate(challengeHash, certPem);
 
         // uploading to IPFS the base64 encrypted challenge
         const challengeIPFSHash = await ipfs.uploadToIPFS(base64EncryptedChallenge);
 
-        // image metadata for v1 format v1:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
-        return `v1:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}`;
+        const publicKey = await getCurrentWalletPublicKey();
+        console.log(publicKey);
+        // image metadata for v2 format v2:image_ipfs_hash:image_name:docker_Compose_ipfs_hash:client_challenge_ipfs_hash
+        return `${VERSION}:${ENCLAVE_IMAGE_IPFS_HASH}:${ENCLAVE_IMAGE_NAME}:${ENCLAVE_DOCKER_COMPOSE_IPFS_HASH}:${challengeIPFSHash}:${publicKey}`;
     }
 
-    const getV1InputMetadata = async () => {
+    const getV2InputMetadata = async () => {
         // extracting code from all the code cells
         const code = cells.extractPythonCode();
         const scriptChecksum = crypto.sha256_1(code);
         // uploading all python code to IPFS and received hash of transaction
         __scriptHash = await ipfs.uploadToIPFS(code);
 
-        return `v1:${__scriptHash}:${scriptChecksum}`
+        console.log(scriptChecksum);
+        return `${VERSION}:${__scriptHash}:${scriptChecksum}`
     }
 
     const parseOrderResult = (result) => {
         try {
             const arr = result.split(':');
+            const tBytes = arr[1].startsWith('0x') ? arr[1] : `0x${arr[1]}`
             return {
-                version: arr[0], transactionBytes: `0x${arr[1]}`, resultIPFSHash: arr[2]
+                version: arr[0], transactionBytes: tBytes, resultIPFSHash: arr[2]
             }
         } catch (e) {
             throw new Error('EtnyParseError');
@@ -321,10 +336,20 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
 
             // get the result value from IPFS using the `parsedOrderResult.resultIPFSHash`
             const ipfsResult = await ipfs.getFromIPFS(parsedOrderResult.resultIPFSHash);
+            console.log('ipfsResult:', ipfsResult);
+            // decrypt data
+            const currentWalletAddress = etnyContract.getCurrentWallet();
+            console.log(currentWalletAddress);
+            const decryptedData = await crypto.decrypt1(ipfsResult, currentWalletAddress);
+
+            if (!decryptedData.success) {
+                return {success: false, message: 'Could not decrypt the order result.'};
+            }
+
             // update the loading message to show the result value
-            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${ipfsResult}`);
+            loadingText = cells.writeMessageToCell(loadingCell, loadingText, `Result value: ${decryptedData.data}`);
             // calculate the SHA-256 checksum of the result value
-            const ipfsResultChecksum = crypto.sha256_1(ipfsResult);
+            const ipfsResultChecksum = crypto.sha256_1(decryptedData.data);
             // check if the calculated checksum matches the `transactionResult.checksum`
             if (ipfsResultChecksum !== transactionResult.checksum) {
                 return {success: false, message: 'Integrity check failed, checksum of the order result is wrong.'};
@@ -371,7 +396,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             };
 
         } catch (ex) {
-            if (ex.name === 'EtnyParseError') {
+            if (ex.name === 'EtnyParseError' || ex.message === 'EtnyParseError') {
                 return {success: false, message: 'Ethernity Parsing Error'};
             }
             await utils.delay(5000);
@@ -385,10 +410,10 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
         await listenForAddDORequestEvent();
 
         // getting image metadata
-        const imageMetadata = await getV1ImageMetadata(challengeHash);
+        const imageMetadata = await getV2ImageMetadata(challengeHash);
 
         // getting script metadata
-        const scriptMetadata = await getV1InputMetadata();
+        const scriptMetadata = await getV2InputMetadata();
 
         // create new DO Request
         await createDORequest(imageMetadata, scriptMetadata);
@@ -441,11 +466,11 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             const nodeAddressCheckbox = $(`
                     <div class="checkbox">
                         <label>
-                          <input id="runOnNodeCheckbox" type="checkbox" style="width: 14px;height: 14px"> 
+                          <input id="runOnNodeCheckbox" type="checkbox" style="width: 14px;height: 14px">
                           <span style="font-size: 14px">Would you like to run the code on a specific node?</span>
                         </label>
                     </div>`);
-            const nodeAddress = $(`<input id="nodeAddress" class='form-control' type='text' value='' disabled/>`);
+            const nodeAddress = $(`<input id="nodeAddress" class='form-control' type='text' value='0xcbDE5054597508dad367D1E7227A5e697eA0f8D1' disabled/>`);
             const onInit = () => {
                 $('#runOnNodeCheckbox').click(function () {
                     if ($(this).is(':checked')) {
@@ -459,7 +484,7 @@ define(["require", 'jquery', "base/js/namespace", "base/js/dialog", './bloxbergA
             };
 
             dialog.modal({
-                title: "Ethernity Cloud Runner v1", body: $("<div></div>")
+                title: "Ethernity Cloud Runner v2", body: $("<div></div>")
                     .append("Every field is optional, it is only to enhance the generated certificate at the end of the process.")
                     .append($("<br/><br/>"))
                     .append($("<label style='font-weight: bold;'>Author or Group Name</label>"))

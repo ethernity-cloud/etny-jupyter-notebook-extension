@@ -70,7 +70,7 @@ define(function (require, exports, module) {
                 continue;
             }
 
-            if (cell.get_text().toLowerCase().includes('starting running task') ||
+            if (cell.get_text().toLowerCase().includes('started running task') ||
                 cell.get_text().toLowerCase().includes('ethernity cloud certificate')) {
                 const index = Jupyter.notebook.find_cell_index(cell);
                 if (index > 0) {

@@ -27,6 +27,10 @@ define(function (require, exports, module) {
         currentWallet = await _getCurrentWallet();
     }
 
+    const getSigner = () => {
+        return signer;
+    }
+
     const getContract = () => {
         return etnyContract;
     }
@@ -49,7 +53,7 @@ define(function (require, exports, module) {
     }
 
     const addDORequest = async (imageMetadata = IMAGE_HASH, payloadMetadata, inputMetadata, nodeAddress) => {
-        const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 60, instances = 1, maxPrice = 0;
+        const cpu = 1, memory = 1, storage = 40, bandwidth = 1, duration = 1, instances = 1, maxPrice = 10;
         return await etnyContract._addDORequest(cpu, memory, storage, bandwidth, duration, instances, maxPrice, imageMetadata, payloadMetadata, inputMetadata, nodeAddress);
     }
 
@@ -92,6 +96,10 @@ define(function (require, exports, module) {
         };
     }
 
+    const createRandomWallet = () => {
+        return ethers.Wallet.createRandom();
+    }
+
     const generateWallet = (clientChallenge, enclaveChallenge) => {
         try {
             const encoded = clientChallenge + enclaveChallenge;
@@ -106,8 +114,20 @@ define(function (require, exports, module) {
         }
     }
 
+    // facem checksum la cod in clar + semnam cu wallet => trimitem in metadatele noastre
+    // pe trusted zone  => calculez checksum la codul/input decriptat si verific semnatura ca e owner walletul care a initiat tranzactia
+    const signMessage = async (message) => {
+        console.log('message to sign: ', message);
+        const signer = getSigner();
+        console.log('signer:', signer);
+        const signedMessage = await signer.signMessage(message);
+        console.log(signedMessage);
+        return signedMessage;
+    }
+
     module.exports = {
         getContract,
+        getSigner,
         contractAddress: etnyContractAddress,
         imageHash: IMAGE_HASH,
         getProvider,
@@ -122,6 +142,8 @@ define(function (require, exports, module) {
         getResultFromOrder,
         parseTransactionBytes,
         generateWallet,
-        isNodeOperator
+        isNodeOperator,
+        createRandomWallet,
+        signMessage
     };
 });
